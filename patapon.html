@@ -15,23 +15,30 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
   padding:6px 12px;border-radius:8px;border:1px solid #00ff84;
 }
 
+/* 版本号 */
+#version{
+  position:fixed;top:50px;left:10px;z-index:9999;
+  color:#00ff84;font-size:14px;font-weight:bold;
+  background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:6px;
+}
+
 #goldBar{
   position:fixed;top:10px;right:10px;z-index:9999;
   color:#ffd000;font-size:18px;font-weight:bold;
   background:rgba(0,0,0,0.6);padding:6px 12px;border-radius:8px;
 }
 
-/* 排行榜按钮 */
+/* 排行榜按钮 —— 与返回按钮同一行 */
 #rankBtn{
-  position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:9999;
+  position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999;
   color:#fff;font-size:16px;font-weight:bold;
   background:rgba(255,190,0,0.6);padding:6px 12px;border-radius:8px;
   border:none;cursor:pointer;
 }
 
-/* 关卡显示 - 贴战斗区域上边缘 */
+/* 关卡显示 */
 #levelBar{
-  position:fixed;top:calc(50% - 22vh);left:50%;transform:translateX(-50%);z-index:9999;
+  position:fixed;top:100px;left:50%;transform:translateX(-50%);z-index:9999;
   color:#fff;font-size:18px;font-weight:bold;
   background:rgba(255,190,0,0.8);padding:6px 14px;border-radius:8px;
 }
@@ -61,13 +68,12 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
   position:fixed;left:50%;transform:translateX(-50%);
   display:flex;gap:8px;padding:8px;
   width:98%;max-width:700px;
-  flex-wrap:wrap; /* 自动换行，禁用滚动条 */
+  flex-wrap:wrap;
   justify-content:center;
 }
-#playerTeam{bottom:8px;} /* 上移，减少底部空白 */
-#enemyTeam{top:20px;display:none;} /* 隐藏顶部敌人信息 */
+#playerTeam{bottom:8px;}
+#enemyTeam{top:20px;display:none;}
 
-/* 加宽动物卡牌，防止文字换行 */
 .creature{
   width:80px;min-width:80px;height:auto;background:#1a1a2e;
   border:2px solid #888;border-radius:10px;
@@ -94,13 +100,19 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 .creature .btn.rev:disabled{background:#444;color:#888;cursor:not-allowed;}
 .creature .btn.bur{background:#880000;}
 
+/* 战斗区域：紧贴顶部按钮下方 */
 #battleZone{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:85vw;height:42vh;max-width:500px;
+  position:absolute;
+  top:100px;
+  left:50%;
+  transform:translateX(-50%);
+  width:85vw;
+  height:46vh;
+  max-width:500px;
   background:rgba(0,0,0,0.3);border:1px solid #444;
   border-radius:20px;
   display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
-  padding:10px 0; /* 减少内边距，紧凑显示 */
+  padding:10px 0;
 }
 
 .battle-unit{
@@ -114,14 +126,12 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 }
 .hp-fill{height:100%;background:#00ff84;transition:width 0.3s;}
 
-/* BOSS标签 - 放大字体 + 远离血条 */
 .boss-label{
   position:absolute;top:-36px;left:50%;transform:translateX(-50%);
   background:#ff4444;color:#fff;font-size:20px;font-weight:bold;
   padding:4px 10px;border-radius:6px;
 }
 
-/* BOSS预警闪烁动画 */
 @keyframes bossFlash {
   0%{opacity:0;transform:translateX(-50%) scale(0.8);}
   50%{opacity:1;transform:translateX(-50%) scale(1.2);}
@@ -163,11 +173,11 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 
 <body>
 <a id="backBtn" href="index.html">← 返回</a>
+<div id="version">v0.0.7</div>
 <button id="rankBtn" onclick="openRank()">🏆 排行榜</button>
 <div id="levelBar">关卡：1-1</div>
 <div id="goldBar">💰 金币: 0</div>
 
-<!-- 排行榜界面 -->
 <div id="rankPanel">
   <h2>💰 金币排行榜</h2>
   <div id="rankList"></div>
@@ -193,7 +203,7 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 
 <script>
 // ======================
-// 游戏数据（全新关卡系统）
+// 游戏数据
 // ======================
 let playerTeam = [
   {emoji:'🐹', atk:1, hp:3, maxHp:3, level:1},
@@ -203,20 +213,19 @@ let playerTeam = [
   {emoji:'🐹', atk:5, hp:9, maxHp:9, level:1},
 ];
 
-// 关卡核心数据
 let levelData = {
-  currentLevel: 1,    // 当前大关卡
-  currentWave: 1,     // 当前波数（1-5）
-  maxWave: 5,         // 每关5只怪
-  minionAtk: 1,       // 本关小怪攻击力
-  minionHp: 2,        // 本关小怪血量
-  isBoss: false       // 是否是BOSS
+  currentLevel: 1,
+  currentWave: 1,
+  maxWave: 5,
+  minionAtk: 1,
+  minionHp: 2,
+  isBoss: false
 };
 
 let enemy = {atk:1, hp:2, maxHp:2, emoji:'👿', isBoss:false};
 let gold = 0;
 let isAttacking = false;
-let isBossLoading = false; // BOSS加载中 → 禁止攻击
+let isBossLoading = false;
 let currentBattleUnitIndex = -1;
 
 // ======================
@@ -232,7 +241,6 @@ const battleZone = document.getElementById('battleZone');
 const rankPanel = document.getElementById('rankPanel');
 const rankList = document.getElementById('rankList');
 
-// 超大量敌人图标库
 const enemyEmojis = [
   '👿','🐗','🐻','🐺','🦍','🐊','🦖','🦕','🐲','👹',
   '🦁','🐯','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤',
@@ -240,11 +248,10 @@ const enemyEmojis = [
   '🦏','🦛','🐭','🐹','🐰','🐿️','🦎','🐢','🐡','🐠',
   '🐬','🦈','🐳','🐋','🦀','🦞','🦐'
 ];
-// BOSS专属图标
 const bossEmojis = ['👹','🐲','🦖','🦕','🐉','👺'];
 
 // ======================
-// 排行榜功能
+// 排行榜
 // ======================
 function saveRank(){
   let ranks = JSON.parse(localStorage.getItem('pigRank')) || [];
@@ -252,7 +259,6 @@ function saveRank(){
   ranks = [...new Set(ranks)].sort((a,b)=>b-a).slice(0,10);
   localStorage.setItem('pigRank', JSON.stringify(ranks));
 }
-
 function openRank(){
   saveRank();
   let ranks = JSON.parse(localStorage.getItem('pigRank')) || [];
@@ -265,25 +271,21 @@ function openRank(){
   });
   rankPanel.style.display = 'flex';
 }
-
 function closeRank(){
   rankPanel.style.display = 'none';
 }
 
 // ======================
-// 初始化 & 关卡显示
+// 初始化
 // ======================
 startGame();
 function startGame(){ 
   updateLevelDisplay();
   renderAll();
 }
-
-// 更新关卡文字：1-1 格式
 function updateLevelDisplay(){
   levelBar.textContent = `关卡：${levelData.currentLevel}-${levelData.currentWave}`;
 }
-
 function renderAll(){ 
   renderTeams(); 
   renderEnemy(); 
@@ -329,12 +331,12 @@ function renderTeams(){
     div.onclick = () => alive && playerAttack(idx);
     playerTeamEl.appendChild(div);
   });
-
-  // 顶部敌人区域永久隐藏
   enemyTeamEl.innerHTML = '';
 }
 
-// 渲染战斗区敌人（带BOSS标签）
+// ======================
+// 渲染敌人
+// ======================
 function renderEnemy(){
   const bossTag = enemy.isBoss ? '<div class="boss-label">BOSS</div>' : '';
   enemyBattle.innerHTML = `
@@ -353,7 +355,6 @@ function renderCurrentBattleUnit(){
     <div class="hp-bar"><div class="hp-fill" style="width:${u.hp/u.maxHp*100}%"></div></div>
     <div class="battle-stat">🗡️${u.atk} ❤️${u.hp}</div>
   `;
-  // 动物死亡时 彻底清空（隐藏血条+状态）
   if(u.hp <=0){
     playerBattle.innerHTML = ``;
     currentBattleUnitIndex = -1;
@@ -361,10 +362,9 @@ function renderCurrentBattleUnit(){
 }
 
 // ======================
-// 攻击逻辑（增加BOSS加载禁止判断）
+// 攻击逻辑
 // ======================
 function playerAttack(index){
-  // ✅ 核心：BOSS加载中 → 完全禁止攻击
   if(isAttacking || isBossLoading) return;
   const u = playerTeam[index];
   if(!u || u.hp <=0) return;
@@ -392,12 +392,8 @@ function playerAttack(index){
         saveRank();
         playerTeam.push({emoji:enemy.emoji, atk:enemy.atk, hp:enemy.maxHp, maxHp:enemy.maxHp, level:1});
         enemyBattle.classList.remove('enemy-die');
-        
-        // ✅ 先清空敌人，再走BOSS流程
         enemy = {atk:0, hp:0, maxHp:0, emoji:'', isBoss:false};
         renderEnemy();
-        
-        // ✅ 进入下一波（自动判断是否BOSS）
         nextMonster();
       },400);
     }
@@ -408,12 +404,11 @@ function playerAttack(index){
 }
 
 // ======================
-// ✅ 核心：下一只怪物逻辑（完美流程）
+// 下一波怪物
 // ======================
 function nextMonster(){
   levelData.currentWave++;
 
-  // 判断是否通关
   if(levelData.currentWave > levelData.maxWave){
     levelData.currentLevel++;
     levelData.currentWave = 1;
@@ -423,9 +418,8 @@ function nextMonster(){
   levelData.isBoss = (levelData.currentWave === levelData.maxWave);
   updateLevelDisplay();
 
-  // ✅ 如果是BOSS：开启禁止攻击 + 闪烁 + 刷新
   if(levelData.isBoss){
-    isBossLoading = true; // 玩家无法攻击
+    isBossLoading = true;
     
     const flash = document.createElement('div');
     flash.className = 'boss-flash';
@@ -434,9 +428,9 @@ function nextMonster(){
     
     setTimeout(() => {
       flash.remove();
-      spawnCurrentMonster(); // 生成BOSS
+      spawnCurrentMonster();
       renderAll();
-      isBossLoading = false; // 恢复攻击
+      isBossLoading = false;
     }, 1500);
   } else {
     spawnCurrentMonster();
@@ -444,7 +438,6 @@ function nextMonster(){
   }
 }
 
-// 生成新一关的小怪属性
 function generateNewMinionStats(){
   const rAtk = Math.random() * 100;
   const rHp = Math.random() * 100;
@@ -464,7 +457,6 @@ function generateNewMinionStats(){
   levelData.minionHp = hp;
 }
 
-// 生成当前怪物（BOSS = 小怪3~5倍，绝对更强）
 function spawnCurrentMonster(){
   const isBoss = levelData.isBoss;
   let atk, hp, emoji;
@@ -498,7 +490,6 @@ function upgrade(index){
     renderAll();
   }
 }
-
 function revive(index){
   const u = playerTeam[index];
   const cost = u.maxHp;
@@ -508,7 +499,6 @@ function revive(index){
     renderAll();
   }
 }
-
 function bury(index){
   if(currentBattleUnitIndex === index) currentBattleUnitIndex = -1;
   playerTeam.splice(index,1);
