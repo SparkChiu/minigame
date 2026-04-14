@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>圈怪大作战</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#1a1a2e;color:#fff;font-family:Arial,sans-serif;overflow:hidden;}
+#game{position:relative;width:100vw;height:100vh;background:#0f3460;overflow:hidden;}
+
+/* ✅ 可点击返回按钮样式 */
+#backBtn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  color: #00ff84;
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #00ff84;
+  cursor: pointer;
+}
+#backBtn:hover {
+  background: #000;
+}
+
+#ui{
+  position:fixed;top:50px;left:10px;
+  display:flex;gap:16px;font-size:18px;font-weight:bold;
+  z-index:99;
+  color:#fff;
+  text-shadow:0 0 4px #000;
+}
+#modeTip{position:fixed;top:90px;left:10px;font-size:16px;}
+
+#skillBar{position:fixed;bottom:20px;right:20px;display:flex;gap:12px;z-index:98;}
+.skillBtn{width:60px;height:60px;border-radius:50%;background:#118ab2;color:white;font-size:24px;border:none;cursor:pointer;}
+.skillBtn:disabled{background:#444;opacity:0.5;}
+
+#gameOver{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;font-size:30px;z-index:999;gap:12px;color:white;}
+#restartBtn{padding:12px 24px;background:#ff2e63;color:white;border:none;border-radius:8px;font-size:20px;cursor:pointer;}
+
+#rankPanel{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1001;color:white;}
+#rankList{font-size:20px;margin:10px 0;text-align:center;line-height:1.6;}
+#closeRank{padding:8px 16px;background:#ff2e63;color:white;border-radius:8px;margin-top:10px;cursor:pointer;}
+
+#skinPanel{
+  position:fixed;top:12px;right:12px;
+  z-index:1000;
+  display:flex;gap:6px;
+}
+.skin{width:40px;height:40px;border-radius:50%;font-size:24px;background:#222;border:2px solid #fff;cursor:pointer;}
+
+.monster{position:absolute;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;transition:0.2s;}
+.normal{background:#ff2e63;}
+.bomb{background:#ff9100;}
+.ghost{background:#7b2cbf;opacity:0.75;}
+.boss{background:#7000ff;width:70px;height:70px;font-size:40px;}
+.elite{background:#00d8ff;width:50px;height:50px;font-size:32px;}
+.heal{background:#06d6a0;}
+.item{position:absolute;width:32px;height:32px;border-radius:50%;background:#00d8ff;display:flex;align-items:center;justify-content:center;font-size:24px;animation:spin 3s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.floating{position:absolute;color:white;font-weight:bold;font-size:22px;pointer-events:none;animation:float 0.6s ease-out forwards;}
+@keyframes float{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-40px);}}
+.explode{position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.6);animation:explode 0.3s ease-out forwards;}
+@keyframes explode{0%{transform:scale(0);opacity:1;}100%{transform:scale(2);opacity:0;}}
+.freeze{position:absolute;inset:0;background:rgba(0,200,255,0.2);z-index:97;display:none;}
+
+#modeSelect{
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  background:#1a1a2e;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:1002;gap:16px;color:white;
+  text-align:center;
+}
+.modeBtn{padding:16px 32px;background:#0f3460;color:white;border:none;border-radius:10px;font-size:22px;cursor:pointer;}
+#ruleBtn{padding:10px 20px;background:#222;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;margin-top:4px;}
+#rulePanel{max-width:320px;display:none;background:#111;padding:12px 16px;border-radius:10px;font-size:15px;line-height:1.5;text-align:left;}
+#homeStamina{font-size:20px;margin:10px 0;display:flex;align-items:center;gap:8px;}
+#coinBtn{font-size:22px;border:none;background:#ffca2a;color:white;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+#homeRank{font-size:18px;line-height:1.6;margin:10px 0;min-width:200px;}
+
+.line{position:absolute;pointer-events:none;stroke:white;stroke-width:3;fill:none;}
+</style>
+</head>
+<body>
+
+<!-- ✅ 真正的超链接返回按钮（可点击跳转） -->
+<a id="backBtn" href="index.html">← 返回</a>
+
+<div id="modeSelect">
+  <h2>圈怪大作战</h2>
+  <div id="homeRank">🏆 排行榜</div>
+  
+  <div id="homeStamina">
+    <button id="coinBtn" onclick="addStamina()">🪙</button>
+    <span id="homeStaminaText">体力: 加载中...</span>
+  </div>
+
+  <button class="modeBtn" onclick="startGame()">开始游戏</button>
+  
+  <button id="ruleBtn" onclick="toggleRule()">📜 游戏规则</button>
+  <div id="rulePanel">
+    1. 用手指或鼠标画线圈住怪物得分<br>
+    2. 每关达到指定分数即可过关<br>
+    3. 圈到炸弹会直接游戏结束<br>
+    4. 爱心可得分，闪电道具恢复体力<br>
+    5. BOSS 被抓后可提升体力上限<br>
+    6. 每次画线消耗 1 点体力，体力耗尽则结束<br>
+    7. 点击金币按钮可恢复 1 点体力<br>
+    8. 关卡越高，怪物速度越快，挑战越大
+  </div>
+</div>
+
+<div id="freeze"></div>
+
+<div id="skinPanel">
+  <button class="skin" onclick="changeSkin('👾')">👾</button>
+  <button class="skin" onclick="changeSkin('👻')">👻</button>
+  <button class="skin" onclick="changeSkin('🐲')">🐲</button>
+  <button class="skin" onclick="changeSkin('🦖')">🦖</button>
+</div>
+
+<div id="game">
+  <div id="ui">
+    <div>分数: <span id="score">0</span></div>
+    <div>关卡: <span id="level">1</span></div>
+    <div id="staminaUi">体力: 20/20</div>
+  </div>
+  <div id="modeTip"></div>
+
+  <div id="skillBar">
+    <button id="freezeBtn" class="skillBtn" onclick="useFreeze()" disabled>❄️</button>
+    <button id="rageBtn" class="skillBtn" onclick="useRage()" disabled>🔥</button>
+  </div>
+
+  <div id="gameOver">
+    <div>游戏结束</div>
+    <div id="finalScore">最终分数: 0</div>
+    <button id="restartBtn" onclick="restart()">重新开始</button>
+  </div>
+</div>
+
+<script>
+const game = document.getElementById('game');
+const scoreText = document.getElementById('score');
+const levelText = document.getElementById('level');
+const staminaUi = document.getElementById('staminaUi');
+const modeTip = document.getElementById('modeTip');
+const gameOverPanel = document.getElementById('gameOver');
+const modeSelect = document.getElementById('modeSelect');
+const finalScore = document.getElementById('finalScore');
+const freezeBtn = document.getElementById('freezeBtn');
+const rageBtn = document.getElementById('rageBtn');
+const freezeEffect = document.getElementById('freeze');
+const homeStamina = document.getElementById('homeStamina');
+const homeStaminaText = document.getElementById('homeStaminaText');
+const homeRank = document.getElementById('homeRank');
+const coinBtn = document.getElementById('coinBtn');
+const ruleBtn = document.getElementById('ruleBtn');
+const rulePanel = document.getElementById('rulePanel');
+
+let score = 0;
+let level = 1;
+let gameMode = 'stamina';
+let gameTimer;
+let isDrawing = false;
+let currentPath = [];
+let line;
+let monsterSpeed = 2.6;
+let monsterList = [];
+let itemList = [];
+const MAX_MONSTERS = 9;
+
+let save = JSON.parse(localStorage.getItem('circleSave')) || {
+  stamina: 20,
+  maxStamina: 20,
+  staminaCountdown: 0
+};
+let stamina = save.stamina;
+let maxStamina = save.maxStamina;
+let staminaCountdown = save.staminaCountdown;
+
+let staminaTickTimer = null;
+let freezeCD = 0;
+let rageCD = 0;
+let isFrozen = false;
+let isGameStarted = false;
+let playerSkin = '👾';
+let rankData = JSON.parse(localStorage.getItem('circleRank')) || [];
+
+updateHomeUI();
+startGlobalStaminaRegen();
+
+function saveStamina(){
+  localStorage.setItem('circleSave', JSON.stringify({
+    stamina, maxStamina, staminaCountdown
+  }));
+}
+
+function addStamina(){
+  if(stamina >= maxStamina) return;
+  stamina = Math.min(stamina + 1, maxStamina);
+  saveStamina();
+  updateHomeUI();
+}
+
+function toggleRule(){
+  if(rulePanel.style.display === 'block'){
+    rulePanel.style.display = 'none';
+  }else{
+    rulePanel.style.display = 'block';
+  }
+}
+
+function updateHomeUI(){
+  let cd = staminaCountdown > 0 ? staminaCountdown : 0;
+  let txt = `体力: ${stamina}/${maxStamina} (${cd}秒)`;
+  homeStaminaText.textContent = txt;
+  updateStaminaUI();
+  
+  let rankHtml = "🏆 排行榜<br>";
+  let list = [...new Set(rankData)].sort((a,b)=>b-a).slice(0,5);
+  if(list.length===0) rankHtml += "暂无记录";
+  else list.forEach((s,i)=> rankHtml += (i+1)+". "+s+"分<br>");
+  homeRank.innerHTML = rankHtml;
+}
+
+function startGlobalStaminaRegen(){
+  if(staminaTickTimer) clearInterval(staminaTickTimer);
+  staminaTickTimer = setInterval(()=>{
+    if(stamina >= maxStamina){
+      staminaCountdown = 0;
+      saveStamina();
+      updateHomeUI();
+      return;
+    }
+    if(staminaCountdown > 0){
+      staminaCountdown--;
+    }else{
+      stamina = Math.min(stamina+1, maxStamina);
+      staminaCountdown = 60;
+    }
+    saveStamina();
+    updateHomeUI();
+  },1000);
+}
+
+function startGame(){
+  modeSelect.style.display = 'none';
+  freezeBtn.disabled = false;
+  rageBtn.disabled = false;
+  isGameStarted = true;
+  initMonsters();
+  setTimeout(spawnItem, 3000);
+  skillLoop();
+}
+
+function updateStaminaUI(){ 
+  staminaUi.textContent = `体力: ${stamina}/${maxStamina}`; 
+}
+
+function changeSkin(emoji){ 
+  playerSkin = emoji; 
+  refreshAllMonsters();
+}
+
+function refreshAllMonsters(){
+  document.querySelectorAll('.monster.normal').forEach(m=>{
+    m.textContent = playerSkin;
+  });
+}
+
+function skillLoop(){
+  if(freezeCD > 0) freezeCD--;
+  if(rageCD > 0) rageCD--;
+  setTimeout(skillLoop, 1000);
+}
+
+function useFreeze(){
+  if(freezeCD > 0 || isFrozen) return;
+  freezeCD = 15;
+  isFrozen = true;
+  freezeEffect.style.display = 'block';
+  setTimeout(()=>{
+    isFrozen = false;
+    freezeEffect.style.display = 'none';
+  },3000);
+}
+
+function useRage(){
+  if(rageCD > 0) return;
+  rageCD = 20;
+  let rt = 5;
+  let ori = monsterSpeed;
+  monsterSpeed *= 1.8;
+  let t = setInterval(()=>{
+    rt--;
+    if(rt <= 0) { monsterSpeed = ori; clearInterval(t); }
+  },1000);
+}
+
+function spawnMonster(){
+  if(monsterList.length >= MAX_MONSTERS) return;
+  const m = document.createElement('div');
+  m.classList.add('monster');
+  
+  const rand = Math.random();
+  let type, speed, scoreP;
+  
+  if(rand < 0.45){
+    type = 'normal'; m.textContent = playerSkin; speed = monsterSpeed; scoreP = 1;
+  }else if(rand < 0.65){
+    type = 'bomb'; m.textContent = '💣'; speed = monsterSpeed*0.8; scoreP = 0;
+  }else if(rand < 0.82){
+    type = 'ghost'; m.textContent = '👻'; speed = monsterSpeed*1.6; scoreP = 2;
+  }else if(rand < 0.92){
+    type = 'elite'; m.textContent = '🌟'; speed = monsterSpeed*1.2; scoreP = 3;
+  }else if(rand < 0.98){
+    type = 'boss'; m.textContent = '👹'; speed = monsterSpeed*0.5; scoreP = 5;
+  }else{
+    type = 'heal'; m.textContent = '❤️'; speed = monsterSpeed*0.9; scoreP = 1;
+  }
+  
+  m.classList.add(type);
+  m.speed = speed; m.score = scoreP; m.type = type;
+  const size = m.type==='boss'?70:m.type==='elite'?50:40;
+  m.style.width = m.style.height = size+'px';
+  m.style.left = Math.random()*(innerWidth-size)+'px';
+  m.style.top = Math.random()*(innerHeight-size)+'px';
+  m.dx = (Math.random()-0.5)*m.speed*2;
+  m.dy = (Math.random()-0.5)*m.speed*2;
+  
+  game.appendChild(m);
+  monsterList.push(m);
+}
+
+function initMonsters(){
+  for(let i=0;i<MAX_MONSTERS;i++){
+    setTimeout(spawnMonster, i*100);
+  }
+}
+
+function spawnItem(){
+  if(gameOverPanel.style.display === 'flex') return;
+  if(itemList.length >= 1) { 
+    setTimeout(spawnItem,5000); 
+    return; 
+  }
+  
+  const item = document.createElement('div');
+  item.classList.add('item');
+  item.textContent = '⚡';
+  const s=32;
+  item.style.left = Math.random()*(innerWidth-s)+'px';
+  item.style.top = Math.random()*(innerHeight-s)+'px';
+  game.appendChild(item);
+  itemList.push(item);
+  
+  setTimeout(()=>{ 
+    if(item.parentNode) item.remove(); 
+    itemList = []; 
+  },8000);
+  setTimeout(spawnItem,8000);
+}
+
+setInterval(()=>{
+  if(isFrozen) return;
+  monsterList.forEach(m=>{
+    if(!m.parentNode) return;
+    let x = parseFloat(m.style.left) + m.dx;
+    let y = parseFloat(m.style.top) + m.dy;
+    const s = m.type==='boss'?70:m.type==='elite'?50:40;
+    if(x<0||x>innerWidth-s) m.dx*=-1;
+    if(y<0||y>innerHeight-s) m.dy*=-1;
+    m.style.left = x+'px';
+    m.style.top = y+'px';
+  });
+},20);
+
+function createLine(){
+  line = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  line.setAttribute('class','line');
+  line.setAttribute('width',innerWidth);
+  line.setAttribute('height',innerHeight);
+  line.style.top = 0;
+  line.style.left = 0;
+  game.appendChild(line);
+}
+
+// ======================
+// ✅ 已修复：iPhone 触摸偏移
+// ======================
+function getEventPos(e) {
+  let rect = game.getBoundingClientRect();
+  let x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+  let y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+  return [x, y];
+}
+
+document.addEventListener('mousedown', startDraw);
+
+document.addEventListener('touchstart', function(e){
+  if (!isGameStarted) return;
+  if (stamina <= 0) return;
+  startDraw(e.touches[0]);
+}, false);
+
+document.addEventListener('mousemove', onDraw);
+
+document.addEventListener('touchmove', function(e){
+  if (!isDrawing) return;
+  onDraw(e.touches[0]);
+}, false);
+
+document.addEventListener('mouseup', endDraw);
+document.addEventListener('touchend', endDraw);
+
+function startDraw(e){
+  if(!isGameStarted) return;
+  if(stamina <= 0) return;
+  isDrawing = true;
+  let [x, y] = getEventPos(e);
+  currentPath = [[x, y]];
+  createLine();
+}
+
+function onDraw(e){
+  if(!isDrawing) return;
+  let [x, y] = getEventPos(e);
+  currentPath.push([x, y]);
+  updateLine();
+}
+
+function updateLine(){
+  let d = '';
+  currentPath.forEach(([x,y],i)=>{ 
+    d += (i===0 ? 'M' : 'L') + x + ' ' + y; 
+  });
+  const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+  p.setAttribute('d',d);
+  line.innerHTML = '';
+  line.appendChild(p);
+}
+
+function endDraw(){
+  if(!isDrawing) return;
+  isDrawing = false;
+  
+  if(isGameStarted){
+    stamina = Math.max(0, stamina - 1); 
+    saveStamina();
+    updateStaminaUI();
+    updateHomeUI();
+    if(stamina <= 0) {
+      setTimeout(gameOver,500);
+    }
+  }
+  
+  checkCatch();
+  if(line) line.remove();
+}
+
+function checkCatch(){
+  const monsters = document.querySelectorAll('.monster');
+  const items = document.querySelectorAll('.item');
+  
+  items.forEach(it=>{
+    const r = it.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    if(pointInPolygon(cx, cy, currentPath)) useItem(it);
+  });
+  
+  monsters.forEach(m=>{
+    if(!m.parentNode) return;
+    const r = m.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    if(pointInPolygon(cx, cy, currentPath)){
+      if(m.type==='bomb'){ 
+        catchBomb(m);
+      }else{ 
+        catchNormal(m); 
+      }
+    }
+  });
+}
+
+function useItem(item){
+  stamina = Math.min(stamina + 5, maxStamina);
+  saveStamina();
+  updateStaminaUI();
+  updateHomeUI();
+  item.remove(); 
+  itemList = [];
+}
+
+function catchNormal(m){
+  let add = m.score;
+  score += add;
+  scoreText.textContent = score;
+  showExplode(m);
+  removeMonster(m);
+  
+  if(m.type==='boss') { 
+    maxStamina += 2; 
+    saveStamina();
+    updateStaminaUI();
+    updateHomeUI();
+  }
+  
+  if(score >= level * 10){
+    level++; 
+    levelText.textContent = level; 
+    
+    monsterList.forEach(mon => { if(mon.parentNode) mon.remove(); });
+    monsterList = [];
+    itemList.forEach(it => { if(it.parentNode) it.remove(); });
+    itemList = [];
+
+    if(level === 2){
+      monsterSpeed *= 1.07;
+    }else if(level === 3){
+      monsterSpeed *= 1.10;
+    }else if(level === 4){
+      monsterSpeed *= 1.18;
+    }else if(level === 5){
+      monsterSpeed *= 1.25;
+    }else{
+      monsterSpeed *= 1.22;
+    }
+    
+    setTimeout(initMonsters, 500);
+  }
+}
+
+function catchBomb(m){
+  showExplode(m);
+  removeMonster(m);
+  setTimeout(gameOver, 300);
+}
+
+function showFloat(ele, t, c){
+  const f = document.createElement('div');
+  f.classList.add('floating');
+  f.textContent = t; 
+  f.style.color = c;
+  f.style.left = ele.style.left;
+  f.style.top = ele.style.top;
+  game.appendChild(f);
+  setTimeout(()=>f.remove(),600);
+}
+
+function showExplode(ele){
+  const e = document.createElement('div');
+  e.classList.add('explode');
+  e.style.left = (parseFloat(ele.style.left) + ele.offsetWidth/2 - 30) + 'px';
+  e.style.top = (parseFloat(ele.style.top) + ele.offsetHeight/2 - 30) + 'px';
+  game.appendChild(e);
+  setTimeout(()=>e.remove(),300);
+}
+
+function removeMonster(m){
+  m.style.transform = 'scale(0)';
+  setTimeout(()=>{
+    if(m.parentNode) m.remove();
+    const i = monsterList.indexOf(m);
+    if(i > -1) monsterList.splice(i, 1);
+    setTimeout(spawnMonster, 100);
+  },200);
+}
+
+function pointInPolygon(px, py, p){
+  let inside = false;
+  for(let i=0, j=p.length-1; i<p.length; j=i++){
+    const [x1,y1] = p[i];
+    const [x2,y2] = p[j];
+    if(((y1 > py) != (y2 > py)) && (px < (x2-x1)*(py-y1)/(y2-y1)+x1)){
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function updateRank(){
+  rankData.push(score);
+  rankData = [...new Set(rankData)].sort((a,b)=>b-a).slice(0,8);
+  localStorage.setItem('circleRank', JSON.stringify(rankData));
+}
+
+function gameOver(){
+  clearInterval(gameTimer);
+  updateRank();
+  finalScore.textContent = '最终分数: ' + score;
+  gameOverPanel.style.display = 'flex';
+  updateHomeUI();
+}
+
+function restart(){
+  window.location.reload();
+}
+</script>
+</body>
+</html>

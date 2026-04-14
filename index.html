@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抓怪玩法试玩</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        min-height: 100vh;
+        background: #0a0a0a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", monospace;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* 黑客风网格背景 */
+    body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            linear-gradient(rgba(0,255,132,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,132,0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: -1;
+    }
+
+    /* 主标题 */
+    .title {
+        font-size: 48px;
+        font-weight: bold;
+        color: #00ff84;
+        text-shadow: 0 0 12px #00ff84, 0 0 24px #00ff84;
+        margin-bottom: 60px;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+
+    /* 按钮容器 */
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        width: 100%;
+        max-width: 460px;
+        padding: 0 20px;
+    }
+
+    /* 黑客风格按钮 */
+    .game-btn {
+        background: #121212;
+        border: 2px solid #00ff84;
+        color: #fff;
+        font-size: 24px;
+        font-weight: bold;
+        padding: 22px 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.25s ease;
+        box-shadow: 0 0 10px rgba(0,255,132,0.2);
+        letter-spacing: 1px;
+        text-decoration: none;
+    }
+
+    .game-btn:hover {
+        background: #00ff84;
+        color: #000;
+        transform: translateY(-4px);
+        box-shadow: 0 0 20px #00ff84, 0 0 40px #00ff84;
+    }
+
+    .game-btn:active {
+        transform: translateY(0);
+    }
+</style>
+</head>
+
+<body>
+    <h1 class="title">抓怪玩法试玩</h1>
+
+    <div class="button-group">
+        <a class="game-btn" href="circle-monster.html">⭕️ 圈怪大作战</a>
+        <a class="game-btn" href="patapon.html">🤲 猪突猛进对对碰</a>
+        <a class="game-btn" href="lets-goblin.html">🚜 疯狂麦克斯</a>
+    </div>
+</body>
+</html>
