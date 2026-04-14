@@ -31,7 +31,7 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 
 /* 关卡显示 - 贴战斗区域上边缘 */
 #levelBar{
-  position:fixed;top:calc(50% - 27vh);left:50%;transform:translateX(-50%);z-index:9999;
+  position:fixed;top:calc(50% - 22vh);left:50%;transform:translateX(-50%);z-index:9999;
   color:#fff;font-size:18px;font-weight:bold;
   background:rgba(255,190,0,0.8);padding:6px 14px;border-radius:8px;
 }
@@ -59,20 +59,20 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 
 .team-area{
   position:fixed;left:50%;transform:translateX(-50%);
-  display:flex;gap:10px;padding:10px;
-  width:95%;max-width:700px;
+  display:flex;gap:8px;padding:8px;
+  width:98%;max-width:700px;
   flex-wrap:wrap; /* 自动换行，禁用滚动条 */
   justify-content:center;
 }
-#playerTeam{bottom:20px;}
+#playerTeam{bottom:8px;} /* 上移，减少底部空白 */
 #enemyTeam{top:20px;display:none;} /* 隐藏顶部敌人信息 */
 
 /* 加宽动物卡牌，防止文字换行 */
 .creature{
-  width:85px;min-width:85px;height:auto;background:#1a1a2e;
+  width:80px;min-width:80px;height:auto;background:#1a1a2e;
   border:2px solid #888;border-radius:10px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-size:32px;position:relative;padding:6px;
+  font-size:30px;position:relative;padding:5px;
   transition:0.2s;
 }
 .creature.alive{border-color:#00ff84;}
@@ -96,28 +96,28 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
 
 #battleZone{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:80vw;height:50vh;max-width:500px;
+  width:85vw;height:42vh;max-width:500px;
   background:rgba(0,0,0,0.3);border:1px solid #444;
   border-radius:20px;
-  display:flex;flex-direction:column;align-items:center;justify-content:space-around;
-  padding:20px 0;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
+  padding:10px 0; /* 减少内边距，紧凑显示 */
 }
 
 .battle-unit{
-  width:100px;height:100px;font-size:48px;
+  width:90px;height:90px;font-size:44px;
   display:flex;align-items:center;justify-content:center;
   position:relative;transition:all 0.3s ease;
 }
 .battle-unit .hp-bar{
-  position:absolute;top:-10px;left:0;right:0;height:6px;
+  position:absolute;top:-8px;left:0;right:0;height:6px;
   background:#444;border-radius:3px;overflow:hidden;
 }
 .hp-fill{height:100%;background:#00ff84;transition:width 0.3s;}
 
 /* BOSS标签 - 放大字体 + 远离血条 */
 .boss-label{
-  position:absolute;top:-32px;left:50%;transform:translateX(-50%);
-  background:#ff4444;color:#fff;font-size:18px;font-weight:bold;
+  position:absolute;top:-36px;left:50%;transform:translateX(-50%);
+  background:#ff4444;color:#fff;font-size:20px;font-weight:bold;
   padding:4px 10px;border-radius:6px;
 }
 
@@ -128,15 +128,15 @@ body{background:#0a0a12;color:#fff;font-family:Arial,sans-serif;overflow:hidden;
   100%{opacity:0;transform:translateX(-50%) scale(0.8);}
 }
 .boss-flash{
-  position:absolute;top:-32px;left:50%;transform:translateX(-50%);
-  color:#ff4444;font-size:24px;font-weight:bold;
+  position:absolute;top:-36px;left:50%;transform:translateX(-50%);
+  color:#ff4444;font-size:28px;font-weight:bold;
   text-shadow:0 0 12px #ff0000;
   animation:bossFlash 0.5s ease 3;
   z-index:10;
 }
 
 .battle-stat{
-  position:absolute;bottom:-25px;font-size:12px;color:#fff;
+  position:absolute;bottom:-22px;font-size:12px;color:#fff;
   background:rgba(0,0,0,0.6);padding:2px 6px;border-radius:4px;white-space:nowrap;
 }
 
@@ -373,7 +373,7 @@ function playerAttack(index){
   currentBattleUnitIndex = index;
   renderCurrentBattleUnit();
 
-  setTimeout(()=>{ playerBattle.style.transform = 'translateY(-120px)'; },50);
+  setTimeout(()=>{ playerBattle.style.transform = 'translateY(-100px)'; },50);
 
   setTimeout(()=>{
     battleZone.classList.add('hit-shake');
