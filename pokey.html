@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>🧬神奇动物的基因实验室</title>
+  <title>🧬基因实验室</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body {
@@ -130,6 +130,26 @@
       outline: 2px solid #7cdbff;
       outline-offset: -2px;
     }
+    .cell.peek-hint .back {
+      opacity: 0.85;
+      background: linear-gradient(145deg, rgba(61, 74, 110, 0.92) 0%, rgba(42, 51, 80, 0.9) 100%);
+    }
+    .cell.peek-hint .back::after {
+      opacity: 0.85;
+    }
+    .cell.pattern-complete {
+      z-index: 2;
+      border-radius: 6px;
+      box-shadow:
+        0 0 0 2px rgba(255, 224, 130, 0.98),
+        0 0 0 4px rgba(255, 180, 60, 0.35),
+        0 0 16px rgba(255, 200, 90, 0.55);
+    }
+    .cell.pattern-complete .under {
+      box-shadow:
+        inset 0 0 0 2px rgba(255, 245, 200, 0.95),
+        inset 0 2px 10px rgba(0, 0, 0, 0.28);
+    }
     .footer {
       flex-shrink: 0;
       padding-top: 8px;
@@ -215,7 +235,7 @@
       <div id="board" role="grid"></div>
     </div>
     <div class="footer">
-      <div class="footer-hint" id="footerHint">点击牌面翻开（消耗1体力）。点选道具后点棋盘使用；三明治、汉堡点击即生效。</div>
+      <div class="footer-hint" id="footerHint">点击牌面翻开（消耗1体力）。点选道具后点棋盘使用；三明治、汉堡、显微镜点击即生效。</div>
       <div class="items" id="itemsBar"></div>
     </div>
   </div>
@@ -224,7 +244,7 @@
 (function () {
   'use strict';
 
-  const ITEM_TYPES = ['yizima', 'qingtianzhu', 'shizijia', 'xiangdanqiang', 'tiaotiaoshu', 'shizihou', 'sanmingzhi', 'hanbao'];
+  const ITEM_TYPES = ['yizima', 'qingtianzhu', 'shizijia', 'xiangdanqiang', 'tiaotiaoshu', 'shizihou', 'sanmingzhi', 'hanbao', 'weixianjing'];
   const ITEM_DEF = {
     yizima: { name: '一字马', emoji: '🤸' },
     qingtianzhu: { name: '擎天柱', emoji: '🏗️' },
@@ -234,6 +254,7 @@
     shizihou: { name: '狮子吼', emoji: '🦁' },
     sanmingzhi: { name: '三明治', emoji: '🥪' },
     hanbao: { name: '汉堡', emoji: '🍔' },
+    weixianjing: { name: '显微镜', emoji: '🔬' },
   };
 
   const STAMINA_REGEN_MS = 60000;
@@ -254,6 +275,10 @@
   let activeItemSlot = null;
   let expandWideNext = true;
   let toastTimer = null;
+  let microscopeChargesAuto = 0;
+  let microscopeChargesItem = 0;
+  let peekSet = new Set();
+  let autoMicroHalfUsedThisBoard = false;
 
   function key(r, c) { return r + ',' + c; }
   function parseKey(k) { const p = k.split(','); return { r: +p[0], c: +p[1] }; }
@@ -479,10 +504,24 @@
     });
   }
 
+  function microscopeChargesTotal() {
+    return microscopeChargesAuto + microscopeChargesItem;
+  }
+
+  function tryAutoMicroscopeFromLowStamina() {
+    if (autoMicroHalfUsedThisBoard) return;
+    if (staminaMax <= 0) return;
+    if (stamina >= staminaMax / 2) return;
+    autoMicroHalfUsedThisBoard = true;
+    microscopeChargesAuto += 5;
+    toast('体力偏低：已自动获得显微镜窥视×5');
+  }
+
   function revealCell(r, c) {
     if (!inBounds(r, c)) return false;
     if (revealed[r][c]) return false;
     revealed[r][c] = true;
+    peekSet.delete(key(r, c));
     return true;
   }
 
@@ -499,15 +538,17 @@
     applyStaminaRegen();
     if (stamina <= 0) {
       toast('体力不足');
-      return;
+      return false;
     }
-    if (revealed[r][c]) return;
+    if (revealed[r][c]) return false;
     stamina -= 1;
     revealCell(r, c);
     checkPatternComplete();
+    tryAutoMicroscopeFromLowStamina();
     renderHud();
     renderBoard();
     maybeAdvanceBoard();
+    return true;
   }
 
   function maybeAdvanceBoard() {
@@ -532,7 +573,10 @@
   }
 
   function resetBoardState() {
+    autoMicroHalfUsedThisBoard = false;
+    microscopeChargesAuto = 0;
     revealed = [];
+    peekSet = new Set();
     for (let r = 0; r < rows; r++) {
       revealed[r] = [];
       for (let c = 0; c < cols; c++) revealed[r][c] = false;
@@ -554,29 +598,54 @@
     setFooterHint();
   }
 
+  function isInstantItem(t) {
+    return t === 'sanmingzhi' || t === 'hanbao' || t === 'weixianjing';
+  }
+
   function isBoardTargetItem(t) {
-    return t && t !== 'sanmingzhi' && t !== 'hanbao';
+    return t && !isInstantItem(t);
+  }
+
+  function applyMicroscopePeek(r, c) {
+    if (microscopeChargesTotal() <= 0) return;
+    if (microscopeChargesAuto > 0) microscopeChargesAuto -= 1;
+    else microscopeChargesItem -= 1;
+    neighbors8(r, c).forEach(function (x) {
+      const nr = x[0], nc = x[1];
+      if (!revealed[nr][nc]) peekSet.add(key(nr, nc));
+    });
+    if (microscopeChargesTotal() === 0) toast('显微镜：窥视次数已用尽');
   }
 
   function setFooterHint() {
     const el = document.getElementById('footerHint');
+    const microPrefix = microscopeChargesTotal() > 0
+      ? '显微镜：剩余 ' + microscopeChargesTotal() + ' 次窥视（点击棋盘，周围未翻牌半透明）。'
+      : '';
+    const idleTail = '点击牌面翻开（消耗1体力）。点选道具后点棋盘使用；三明治、汉堡、显微镜点击即生效。';
     if (activeItemSlot !== null && items[activeItemSlot] && isBoardTargetItem(items[activeItemSlot])) {
       const t = items[activeItemSlot];
-      el.textContent = '已选择「' + ITEM_DEF[t].name + '」：请点击棋盘生效（不消耗体力）';
+      el.textContent = microPrefix + '已选择「' + ITEM_DEF[t].name + '」：请点击棋盘生效（不消耗体力）';
     } else {
-      el.textContent = '点击牌面翻开（消耗1体力）。点选道具后点棋盘使用；三明治、汉堡点击即生效。';
+      el.textContent = microPrefix + idleTail;
     }
   }
 
   function applyInstantItem(slotIndex) {
     const t = items[slotIndex];
     if (t === 'sanmingzhi') {
+      tryAutoMicroscopeFromLowStamina();
       stamina = Math.min(staminaMax, stamina + 5);
       toast('三明治：+5 体力');
+      tryAutoMicroscopeFromLowStamina();
     } else if (t === 'hanbao') {
+      tryAutoMicroscopeFromLowStamina();
       stamina = staminaMax;
       lastStaminaTick = Date.now();
       toast('汉堡：体力已补满');
+    } else if (t === 'weixianjing') {
+      microscopeChargesItem += 5;
+      toast('显微镜：接下来5次点击可窥视周围牌下图案');
     } else {
       return;
     }
@@ -733,6 +802,7 @@
       revealMany(coords);
     }
     consumeActiveItem();
+    tryAutoMicroscopeFromLowStamina();
     renderHud();
     renderBoard();
     renderItems();
@@ -744,7 +814,14 @@
       applyItemAt(r, c);
       return;
     }
-    tryNormalFlip(r, c);
+    const hadMicro = microscopeChargesTotal() > 0;
+    if (hadMicro) applyMicroscopePeek(r, c);
+    const flipped = tryNormalFlip(r, c);
+    if (hadMicro && !flipped) {
+      renderHud();
+      renderBoard();
+    }
+    if (hadMicro) setFooterHint();
   }
 
   function renderHud() {
@@ -797,6 +874,12 @@
         const back = document.createElement('div');
         back.className = 'face back';
         if (activeItemSlot !== null && items[activeItemSlot] && isBoardTargetItem(items[activeItemSlot])) cell.classList.add('dim-target');
+        if (peekSet.has(key(r, c)) && !revealed[r][c]) {
+          cell.classList.add('peek-hint');
+        }
+        if (pid >= 0 && patterns[pid] && patterns[pid].completedBonus) {
+          cell.classList.add('pattern-complete');
+        }
         if (revealed[r][c]) {
           cell.classList.add('revealed');
         }
@@ -822,7 +905,7 @@
           e.stopPropagation();
           if (!items[i]) return;
           const t = items[i];
-          if (t === 'sanmingzhi' || t === 'hanbao') {
+          if (isInstantItem(t)) {
             applyInstantItem(i);
             return;
           }
