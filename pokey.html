@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>🧬神奇动物的基因实验室</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(165deg, #1a1f35 0%, #0d1018 50%, #12182a 100%);
+      color: #e8ecf4;
+    }
+    #app {
+      height: 100%;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 8px) 10px env(safe-area-inset-bottom, 8px);
+      max-width: 100vw;
+      overflow: hidden;
+    }
+    .hud {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 4px 8px;
+      font-size: clamp(12px, 3.2vw, 15px);
+    }
+    .hud-line {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(8px, 2vw, 20px);
+      flex-wrap: wrap;
+    }
+    .hud-line span { white-space: nowrap; }
+    .regen-row {
+      width: min(92vw, 360px);
+      font-size: clamp(10px, 2.8vw, 12px);
+      color: #9aa6bc;
+    }
+    .regen-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+    .regen-bar-bg {
+      height: 6px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+    .regen-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #3d9eff, #7cdbff);
+      transition: width 0.15s linear;
+    }
+    .hud .accent { color: #7cdbff; font-weight: 600; }
+    .hud .gold { color: #ffd56a; font-weight: 600; }
+    .board-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 0;
+    }
+    #board {
+      display: grid;
+      gap: 2px;
+      background: #2a3148;
+      padding: 3px;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.45);
+    }
+    .cell {
+      position: relative;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cell .under {
+      position: absolute;
+      inset: 0;
+      border-radius: 3px;
+      transition: opacity 0.18s ease;
+    }
+    .cell.empty .under { background: #252b3d; }
+    .cell .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(14px, 4vw, 22px);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      backface-visibility: hidden;
+    }
+    .cell .back {
+      background: linear-gradient(145deg, #3d4a6e 0%, #2a3350 100%);
+      border: 1px solid #4a5a82;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .cell .back::after {
+      content: "";
+      width: 42%;
+      height: 42%;
+      border: 2px solid rgba(255,255,255,.15);
+      border-radius: 6px;
+      transform: rotate(12deg);
+    }
+    .cell.revealed .back {
+      opacity: 0;
+      pointer-events: none;
+      transform: rotateY(90deg);
+    }
+    .cell.dim-target .back {
+      outline: 2px solid #7cdbff;
+      outline-offset: -2px;
+    }
+    .footer {
+      flex-shrink: 0;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .footer-hint {
+      text-align: center;
+      font-size: 11px;
+      color: #8892a8;
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+    .items {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .item-slot {
+      flex: 0 0 auto;
+      width: clamp(56px, 18vw, 76px);
+      min-height: 64px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      border: 2px solid transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 10px;
+      color: #b8c0d4;
+      cursor: pointer;
+      padding: 4px 2px;
+    }
+    .item-slot.active {
+      border-color: #7cdbff;
+      background: rgba(124, 219, 255, .12);
+      color: #fff;
+    }
+    .item-slot .emo { font-size: clamp(22px, 7vw, 30px); line-height: 1; }
+    .item-slot.empty { opacity: .35; pointer-events: none; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20,24,36,.92);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s;
+      z-index: 100;
+      max-width: 86vw;
+      text-align: center;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="hud">
+      <div class="hud-line">
+        <span>体力 <span class="accent" id="staminaText">0/0</span></span>
+        <span>获得基因 <span class="gold" id="scoreText">0</span></span>
+        <span>第 <span class="accent" id="boardNumText">1</span> 次实验</span>
+      </div>
+      <div class="regen-row" id="regenBlock">
+        <div class="regen-label-row">
+          <span id="regenSpeedLabel">恢复速度</span>
+          <span id="regenRemainLabel"></span>
+        </div>
+        <div class="regen-bar-bg"><div class="regen-bar-fill" id="regenFill"></div></div>
+      </div>
+    </div>
+    <div class="board-wrap">
+      <div id="board" role="grid"></div>
+    </div>
+    <div class="footer">
+      <div class="footer-hint" id="footerHint">点击牌面翻开（消耗1体力）。点选道具后点棋盘使用；三明治、汉堡点击即生效。</div>
+      <div class="items" id="itemsBar"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+(function () {
+  'use strict';
+
+  const ITEM_TYPES = ['yizima', 'qingtianzhu', 'shizijia', 'xiangdanqiang', 'tiaotiaoshu', 'shizihou', 'sanmingzhi', 'hanbao'];
+  const ITEM_DEF = {
+    yizima: { name: '一字马', emoji: '🤸' },
+    qingtianzhu: { name: '擎天柱', emoji: '🏗️' },
+    shizijia: { name: '十字架', emoji: '✝️' },
+    xiangdanqiang: { name: '霰弹枪', emoji: '🔫' },
+    tiaotiaoshu: { name: '跳跳鼠', emoji: '🐀' },
+    shizihou: { name: '狮子吼', emoji: '🦁' },
+    sanmingzhi: { name: '三明治', emoji: '🥪' },
+    hanbao: { name: '汉堡', emoji: '🍔' },
+  };
+
+  const STAMINA_REGEN_MS = 60000;
+  const CELL_MAX = 80;
+  const HUD_RESERVE = 78;
+  const FOOTER_RESERVE = 96;
+  const PADDING = 28;
+
+  let rows = 3, cols = 3;
+  let patterns = [];
+  let cellPattern = [];
+  let revealed = [];
+  let stamina = 10, staminaMax = 10;
+  let lastStaminaTick = Date.now();
+  let score = 0;
+  let boardIndex = 1;
+  let items = [];
+  let activeItemSlot = null;
+  let expandWideNext = true;
+  let toastTimer = null;
+
+  function key(r, c) { return r + ',' + c; }
+  function parseKey(k) { const p = k.split(','); return { r: +p[0], c: +p[1] }; }
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1600);
+  }
+
+  function inBounds(r, c) {
+    return r >= 0 && r < rows && c >= 0 && c < cols;
+  }
+
+  function neighbors4(r, c) {
+    return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].filter(function (x) { return inBounds(x[0], x[1]); });
+  }
+
+  function neighbors8(r, c) {
+    const out = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const nr = r + dr, nc = c + dc;
+        if (inBounds(nr, nc)) out.push([nr, nc]);
+      }
+    }
+    return out;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  function buildForbidden(occupiedSet) {
+    const forbidden = new Set();
+    occupiedSet.forEach(function (k) {
+      const { r, c } = parseKey(k);
+      neighbors8(r, c).forEach(function (x) {
+        forbidden.add(key(x[0], x[1]));
+      });
+    });
+    return forbidden;
+  }
+
+  function tryGrowPolyomino(seedR, seedC, forbidden, occupied) {
+    const sk = key(seedR, seedC);
+    if (occupied.has(sk) || forbidden.has(sk)) return null;
+    let targetSize = 2 + Math.floor(Math.random() * 5);
+    if (Math.random() < 0.5) targetSize = 2 + Math.floor(Math.random() * 2);
+    const cells = new Set([sk]);
+    const cand = [];
+    function addCand(r, c) {
+      neighbors4(r, c).forEach(function (x) {
+        const k = key(x[0], x[1]);
+        if (!cells.has(k) && !occupied.has(k) && !forbidden.has(k)) cand.push(k);
+      });
+    }
+    addCand(seedR, seedC);
+    while (cells.size < targetSize && cand.length) {
+      const pick = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
+      if (cells.has(pick) || occupied.has(pick) || forbidden.has(pick)) continue;
+      cells.add(pick);
+      const p = parseKey(pick);
+      addCand(p.r, p.c);
+    }
+    if (cells.size < 2) return null;
+    return cells;
+  }
+
+  function generatePatternsOnce() {
+    patterns = [];
+    const occupied = new Set();
+    let guard = 0;
+    while (guard++ < 8000) {
+      const forbidden = buildForbidden(occupied);
+      const seeds = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const k = key(r, c);
+          if (!occupied.has(k) && !forbidden.has(k)) seeds.push([r, c]);
+        }
+      }
+      if (!seeds.length) break;
+      shuffle(seeds);
+      let placed = false;
+      for (let s = 0; s < seeds.length && !placed; s++) {
+        const grown = tryGrowPolyomino(seeds[s][0], seeds[s][1], forbidden, occupied);
+        if (!grown) continue;
+        const colorHue = Math.floor(360 * Math.random());
+        patterns.push({ id: patterns.length, cells: grown, hue: colorHue, completedBonus: false });
+        grown.forEach(function (k) { occupied.add(k); });
+        placed = true;
+      }
+      if (!placed) break;
+    }
+    cellPattern = [];
+    for (let r = 0; r < rows; r++) {
+      cellPattern[r] = [];
+      for (let c = 0; c < cols; c++) cellPattern[r][c] = -1;
+    }
+    patterns.forEach(function (p) {
+      p.cells.forEach(function (k) {
+        const { r, c } = parseKey(k);
+        cellPattern[r][c] = p.id;
+      });
+    });
+  }
+
+  function emergencyTwoPatterns() {
+    patterns = [];
+    const plans = [
+      [ [[0, 0], [0, 1]], [[2, 2], [2, 1]] ],
+      [ [[2, 0], [2, 1]], [[0, 2], [0, 1]] ],
+      [ [[0, 0], [1, 0]], [[2, 2], [1, 2]] ],
+    ];
+    const pick = plans[Math.floor(Math.random() * plans.length)];
+    for (let i = 0; i < 2; i++) {
+      const cells = new Set();
+      pick[i].forEach(function (x) {
+        if (inBounds(x[0], x[1])) cells.add(key(x[0], x[1]));
+      });
+      if (cells.size >= 2) {
+        const hue = Math.floor(360 * Math.random());
+        patterns.push({ id: patterns.length, cells: cells, hue: hue, completedBonus: false });
+      }
+    }
+    cellPattern = [];
+    for (let r = 0; r < rows; r++) {
+      cellPattern[r] = [];
+      for (let c = 0; c < cols; c++) cellPattern[r][c] = -1;
+    }
+    patterns.forEach(function (p) {
+      p.cells.forEach(function (k) {
+        const { r, c } = parseKey(k);
+        if (inBounds(r, c)) cellPattern[r][c] = p.id;
+      });
+    });
+  }
+
+  function generatePatterns() {
+    let tries = 0;
+    do {
+      generatePatternsOnce();
+      tries++;
+    } while (patterns.length < 2 && tries < 100);
+    if (patterns.length < 2) emergencyTwoPatterns();
+  }
+
+  function fitsScreen(nr, nc, cellPx) {
+    const w = window.innerWidth - PADDING;
+    const h = window.innerHeight - HUD_RESERVE - FOOTER_RESERVE - PADDING;
+    return nc * cellPx + (nc - 1) * 2 + 6 <= w && nr * cellPx + (nr - 1) * 2 + 6 <= h;
+  }
+
+  function computeCellSize(nr, nc) {
+    const w = window.innerWidth - PADDING;
+    const h = window.innerHeight - HUD_RESERVE - FOOTER_RESERVE - PADDING;
+    const byW = Math.floor((w - 6 - (nc - 1) * 2) / nc);
+    const byH = Math.floor((h - 6 - (nr - 1) * 2) / nr);
+    return Math.max(28, Math.min(CELL_MAX, byW, byH));
+  }
+
+  function maxExpandDims() {
+    let br = rows, bc = cols;
+    let wide = expandWideNext;
+    for (let step = 0; step < 40; step++) {
+      const nr = br + (wide ? 0 : 1);
+      const nc = bc + (wide ? 1 : 0);
+      const px = computeCellSize(nr, nc);
+      if (!fitsScreen(nr, nc, px)) break;
+      br = nr; bc = nc;
+      wide = !wide;
+    }
+    return { maxR: br, maxC: bc };
+  }
+
+  function applyStaminaRegen() {
+    const now = Date.now();
+    if (stamina >= staminaMax) {
+      lastStaminaTick = now;
+      return;
+    }
+    let delta = now - lastStaminaTick;
+    const gained = Math.floor(delta / STAMINA_REGEN_MS);
+    if (gained > 0) {
+      stamina = Math.min(staminaMax, stamina + gained);
+      lastStaminaTick += gained * STAMINA_REGEN_MS;
+    }
+  }
+
+  function allPatternsRevealed() {
+    for (let pi = 0; pi < patterns.length; pi++) {
+      const p = patterns[pi];
+      for (const k of p.cells) {
+        const { r, c } = parseKey(k);
+        if (!revealed[r][c]) return false;
+      }
+    }
+    return true;
+  }
+
+  function checkPatternComplete() {
+    patterns.forEach(function (p) {
+      let ok = true;
+      for (const k of p.cells) {
+        const { r, c } = parseKey(k);
+        if (!revealed[r][c]) { ok = false; break; }
+      }
+      if (ok && !p.completedBonus) {
+        p.completedBonus = true;
+        const n = p.cells.size;
+        stamina = Math.min(staminaMax, stamina + n);
+        score += 1;
+        toast('图案完成！+' + n + ' 体力，+1 分');
+      }
+    });
+  }
+
+  function revealCell(r, c) {
+    if (!inBounds(r, c)) return false;
+    if (revealed[r][c]) return false;
+    revealed[r][c] = true;
+    return true;
+  }
+
+  function revealMany(list) {
+    let n = 0;
+    list.forEach(function (x) {
+      if (revealCell(x[0], x[1])) n++;
+    });
+    if (n) checkPatternComplete();
+    return n;
+  }
+
+  function tryNormalFlip(r, c) {
+    applyStaminaRegen();
+    if (stamina <= 0) {
+      toast('体力不足');
+      return;
+    }
+    if (revealed[r][c]) return;
+    stamina -= 1;
+    revealCell(r, c);
+    checkPatternComplete();
+    renderHud();
+    renderBoard();
+    maybeAdvanceBoard();
+  }
+
+  function maybeAdvanceBoard() {
+    if (!allPatternsRevealed()) return;
+    staminaMax += 1;
+    stamina = staminaMax;
+    lastStaminaTick = Date.now();
+    const lim = maxExpandDims();
+    if (expandWideNext) {
+      if (cols < lim.maxC) cols += 1;
+      else if (rows < lim.maxR) rows += 1;
+    } else {
+      if (rows < lim.maxR) rows += 1;
+      else if (cols < lim.maxC) cols += 1;
+    }
+    expandWideNext = !expandWideNext;
+    boardIndex += 1;
+    grantRandomItem();
+    resetBoardState();
+    toast('棋盘清空！体力上限+1，体力已补满');
+    renderAll();
+  }
+
+  function resetBoardState() {
+    revealed = [];
+    for (let r = 0; r < rows; r++) {
+      revealed[r] = [];
+      for (let c = 0; c < cols; c++) revealed[r][c] = false;
+    }
+    generatePatterns();
+  }
+
+  function grantRandomItem() {
+    const t = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+    items.push(t);
+    if (items.length > 3) items.shift();
+  }
+
+  function consumeActiveItem() {
+    if (activeItemSlot !== null && activeItemSlot >= 0 && activeItemSlot < items.length) {
+      items.splice(activeItemSlot, 1);
+    }
+    activeItemSlot = null;
+    setFooterHint();
+  }
+
+  function isBoardTargetItem(t) {
+    return t && t !== 'sanmingzhi' && t !== 'hanbao';
+  }
+
+  function setFooterHint() {
+    const el = document.getElementById('footerHint');
+    if (activeItemSlot !== null && items[activeItemSlot] && isBoardTargetItem(items[activeItemSlot])) {
+      const t = items[activeItemSlot];
+      el.textContent = '已选择「' + ITEM_DEF[t].name + '」：请点击棋盘生效（不消耗体力）';
+    } else {
+      el.textContent = '点击牌面翻开（消耗1体力）。点选道具后点棋盘使用；三明治、汉堡点击即生效。';
+    }
+  }
+
+  function applyInstantItem(slotIndex) {
+    const t = items[slotIndex];
+    if (t === 'sanmingzhi') {
+      stamina = Math.min(staminaMax, stamina + 5);
+      toast('三明治：+5 体力');
+    } else if (t === 'hanbao') {
+      stamina = staminaMax;
+      lastStaminaTick = Date.now();
+      toast('汉堡：体力已补满');
+    } else {
+      return;
+    }
+    items.splice(slotIndex, 1);
+    if (activeItemSlot === slotIndex) activeItemSlot = null;
+    else if (activeItemSlot !== null && activeItemSlot > slotIndex) activeItemSlot -= 1;
+    renderHud();
+    renderItems();
+    renderBoard();
+    setFooterHint();
+  }
+
+  function orthoLineThroughClick(r, c, maxHalf) {
+    const set = new Set();
+    for (let d = -maxHalf; d <= maxHalf; d++) {
+      const rr = r + d, cc = c;
+      if (inBounds(rr, cc)) set.add(key(rr, cc));
+    }
+    for (let d = -maxHalf; d <= maxHalf; d++) {
+      const rr = r, cc = c + d;
+      if (inBounds(rr, cc)) set.add(key(rr, cc));
+    }
+    set.delete(key(r, c));
+    const out = [];
+    set.forEach(function (k) {
+      const p = parseKey(k);
+      out.push([p.r, p.c]);
+    });
+    return out;
+  }
+
+  function rowLineMax5(r, c) {
+    const all = [];
+    for (let cc = 0; cc < cols; cc++) all.push([r, cc]);
+    if (all.length <= 5) return all;
+    const out = [];
+    for (let d = -2; d <= 2; d++) {
+      const nc = c + d;
+      if (inBounds(r, nc)) out.push([r, nc]);
+    }
+    return out;
+  }
+
+  function colLineMax5(r, c) {
+    const all = [];
+    for (let rr = 0; rr < rows; rr++) all.push([rr, c]);
+    if (all.length <= 5) return all;
+    const out = [];
+    for (let d = -2; d <= 2; d++) {
+      const nr = r + d;
+      if (inBounds(nr, c)) out.push([nr, c]);
+    }
+    return out;
+  }
+
+  function itemYizima(r, c) {
+    return rowLineMax5(r, c);
+  }
+
+  function itemQingtianzhu(r, c) {
+    return colLineMax5(r, c);
+  }
+
+  function itemShizijia(r, c) {
+    return orthoLineThroughClick(r, c, 5);
+  }
+
+  function itemXiangdanqiang(r, c) {
+    const pool = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (inBounds(rr, cc)) pool.push([rr, cc]);
+      }
+    }
+    if (!pool.length) return [];
+    const skip = pool[Math.floor(Math.random() * pool.length)];
+    return pool.filter(function (x) { return !(x[0] === skip[0] && x[1] === skip[1]); });
+  }
+
+  function runTiaotiaoshu(r, c) {
+    let cr = r;
+    let cc = c;
+    for (let step = 0; step < 3; step++) {
+      const ring = neighbors8(cr, cc).filter(function (x) { return !revealed[x[0]][x[1]]; });
+      if (!ring.length) break;
+      const pick = ring[Math.floor(Math.random() * ring.length)];
+      revealCell(pick[0], pick[1]);
+      cr = pick[0];
+      cc = pick[1];
+    }
+    checkPatternComplete();
+  }
+
+  function perpOffsetsForDiagonal(dr, dc) {
+    if (dr === 1 && dc === 1) return [[1, -1], [-1, 1]];
+    if (dr === 1 && dc === -1) return [[1, 1], [-1, -1]];
+    if (dr === -1 && dc === 1) return [[-1, -1], [1, 1]];
+    if (dr === -1 && dc === -1) return [[-1, 1], [1, -1]];
+    return [[0, 1], [0, -1]];
+  }
+
+  function itemShizihou(r, c) {
+    const diags = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    const orth = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    shuffle(diags);
+    shuffle(orth);
+    const useDiag = Math.random() < 0.5;
+    const dirs = useDiag ? diags : orth;
+    for (let di = 0; di < dirs.length; di++) {
+      const d = dirs[di];
+      const cells = new Set();
+      if (useDiag) {
+        const A = [r + d[0], c + d[1]];
+        if (!inBounds(A[0], A[1])) continue;
+        cells.add(key(r, c));
+        cells.add(key(A[0], A[1]));
+        const offs = perpOffsetsForDiagonal(d[0], d[1]);
+        offs.forEach(function (o) {
+          const B = [A[0] + o[0], A[1] + o[1]];
+          if (inBounds(B[0], B[1])) cells.add(key(B[0], B[1]));
+        });
+      } else {
+        cells.add(key(r, c));
+        const p = [r - d[0], c - d[1]];
+        const q = [r + d[0], c + d[1]];
+        if (inBounds(p[0], p[1])) cells.add(key(p[0], p[1]));
+        if (inBounds(q[0], q[1])) cells.add(key(q[0], q[1]));
+      }
+      if (cells.size) {
+        const out = [];
+        cells.forEach(function (k) {
+          const p = parseKey(k);
+          out.push([p.r, p.c]);
+        });
+        return out;
+      }
+    }
+    return [[r, c]];
+  }
+
+  function applyItemAt(r, c) {
+    if (activeItemSlot === null || !items[activeItemSlot]) return;
+    const activeItem = items[activeItemSlot];
+    if (activeItem === 'tiaotiaoshu') {
+      runTiaotiaoshu(r, c);
+    } else {
+      let coords = [];
+      if (activeItem === 'yizima') coords = itemYizima(r, c);
+      else if (activeItem === 'qingtianzhu') coords = itemQingtianzhu(r, c);
+      else if (activeItem === 'shizijia') coords = itemShizijia(r, c);
+      else if (activeItem === 'xiangdanqiang') coords = itemXiangdanqiang(r, c);
+      else if (activeItem === 'shizihou') coords = itemShizihou(r, c);
+      revealMany(coords);
+    }
+    consumeActiveItem();
+    renderHud();
+    renderBoard();
+    renderItems();
+    maybeAdvanceBoard();
+  }
+
+  function onCellClick(r, c) {
+    if (activeItemSlot !== null && items[activeItemSlot] && isBoardTargetItem(items[activeItemSlot])) {
+      applyItemAt(r, c);
+      return;
+    }
+    tryNormalFlip(r, c);
+  }
+
+  function renderHud() {
+    applyStaminaRegen();
+    document.getElementById('staminaText').textContent = stamina + '/' + staminaMax;
+    document.getElementById('scoreText').textContent = String(score);
+    document.getElementById('boardNumText').textContent = String(boardIndex);
+    const sec = Math.round(STAMINA_REGEN_MS / 1000);
+    const speedLabel = document.getElementById('regenSpeedLabel');
+    const remainLabel = document.getElementById('regenRemainLabel');
+    const fill = document.getElementById('regenFill');
+    speedLabel.textContent = '恢复速度 1点/' + sec + '秒';
+    if (stamina >= staminaMax) {
+      remainLabel.textContent = '已满';
+      fill.style.width = '100%';
+      fill.style.opacity = '0.35';
+    } else {
+      fill.style.opacity = '1';
+      const elapsed = Date.now() - lastStaminaTick;
+      const pct = Math.min(100, (elapsed / STAMINA_REGEN_MS) * 100);
+      fill.style.width = pct + '%';
+      const msLeft = Math.max(0, STAMINA_REGEN_MS - elapsed);
+      const sLeft = Math.ceil(msLeft / 1000);
+      remainLabel.textContent = '下一点约 ' + sLeft + ' 秒';
+    }
+  }
+
+  function renderBoard() {
+    const board = document.getElementById('board');
+    const px = computeCellSize(rows, cols);
+    board.style.gridTemplateColumns = 'repeat(' + cols + ', ' + px + 'px)';
+    board.style.gridTemplateRows = 'repeat(' + rows + ', ' + px + 'px)';
+    board.innerHTML = '';
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.width = px + 'px';
+        cell.style.height = px + 'px';
+        const pid = cellPattern[r][c];
+        const under = document.createElement('div');
+        under.className = 'under';
+        if (pid < 0) {
+          cell.classList.add('empty');
+        } else {
+          const p = patterns[pid];
+          under.style.background = 'hsl(' + p.hue + ', 62%, 48%)';
+          under.style.boxShadow = 'inset 0 2px 8px rgba(0,0,0,.25)';
+        }
+        const back = document.createElement('div');
+        back.className = 'face back';
+        if (activeItemSlot !== null && items[activeItemSlot] && isBoardTargetItem(items[activeItemSlot])) cell.classList.add('dim-target');
+        if (revealed[r][c]) {
+          cell.classList.add('revealed');
+        }
+        cell.appendChild(under);
+        cell.appendChild(back);
+        cell.addEventListener('click', function () { onCellClick(r, c); });
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  function renderItems() {
+    const bar = document.getElementById('itemsBar');
+    bar.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'item-slot' + (!items[i] ? ' empty' : '');
+      if (items[i]) {
+        const def = ITEM_DEF[items[i]];
+        slot.innerHTML = '<span class="emo">' + def.emoji + '</span><span>' + def.name + '</span>';
+        if (activeItemSlot === i) slot.classList.add('active');
+        slot.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (!items[i]) return;
+          const t = items[i];
+          if (t === 'sanmingzhi' || t === 'hanbao') {
+            applyInstantItem(i);
+            return;
+          }
+          activeItemSlot = activeItemSlot === i ? null : i;
+          setFooterHint();
+          renderItems();
+          renderBoard();
+        });
+      } else {
+        slot.innerHTML = '<span class="emo">—</span><span>空</span>';
+      }
+      bar.appendChild(slot);
+    }
+  }
+
+  function renderAll() {
+    renderHud();
+    renderBoard();
+    renderItems();
+    setFooterHint();
+  }
+
+  function init() {
+    items = [];
+    grantRandomItem();
+    resetBoardState();
+    renderAll();
+  }
+
+  window.addEventListener('resize', function () {
+    renderBoard();
+  });
+
+  setInterval(function () {
+    const prev = stamina;
+    renderHud();
+    if (stamina !== prev) renderBoard();
+  }, 500);
+
+  init();
+})();
+  </script>
+</body>
+</html>
