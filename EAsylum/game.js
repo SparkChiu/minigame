@@ -3,6 +3,8 @@ const SAVE_KEY="escape_asylum_demo_v1_save";
 const SAVE_VERSION=4;
 let toastTimer=null;
 let lastFocusedElement=null;
+let intelRevealQueue=[];
+let currentIntelReveal=null;
 
 const skillsMeta={
   fitness:{name:"体能",icon:"🏃",desc:"提升工作耐力，也能在夜间路线中提供优势。"},
@@ -158,7 +160,27 @@ function addIntel(id){
     S.intel[id]=true;
     toastLog(`获得：${intelMeta[id].title}`,false);
     setTimeout(()=>showToast(`${intelMeta[id].icon} 获得${intelMeta[id].type}：${intelMeta[id].title}`,intelMeta[id].evidence?"evidence":"info"),120);
+    queueIntelReveal(id);
   }
+}
+function queueIntelReveal(id){
+  if(!intelMeta[id])return;
+  intelRevealQueue.push(id);
+  if(!currentIntelReveal)showNextIntelReveal();
+}
+function showNextIntelReveal(){
+  const id=intelRevealQueue.shift();
+  if(!id){currentIntelReveal=null;$("intelRevealModal").classList.add("hidden");return}
+  const intel=intelMeta[id];currentIntelReveal=id;
+  $("intelRevealIcon").textContent=intel.icon;$("intelRevealType").textContent=`获得${intel.type}`;$("intelRevealTitle").textContent=intel.title;$("intelRevealDesc").textContent=intel.desc;
+  $("intelRevealBadge").textContent=intel.evidence?"关键证据":"新情报";$("intelRevealBadge").className=`intelRevealBadge ${intel.evidence?"isEvidence":""}`;
+  $("intelRevealCard").className=`modalCard compact intelRevealCard ${intel.evidence?"isEvidence":""}`;
+  $("intelRevealModal").classList.remove("hidden");$("intelRevealConfirm").focus();
+}
+function confirmIntelReveal(){
+  if(!currentIntelReveal)return;
+  $("intelRevealModal").classList.add("hidden");currentIntelReveal=null;
+  showNextIntelReveal();
 }
 function useAction(cost){
   if(S.actions<=0){toastLog("今天已经没有自由行动了。");return false}
@@ -215,6 +237,7 @@ function toastLog(msg,notify=true,changes=[]){S.logs.push({day:S.day,message:msg
 
 function render(){
   normalizeStats();
+  const dayActionContent=$("dayActionContent");dayActionContent.classList.toggle("hidden",!S.morningDone);dayActionContent.setAttribute("aria-hidden",String(!S.morningDone));
   $("day").textContent=S.day;$("period").textContent=["上午","中午","下午","傍晚"][S.period]||"傍晚";
   $("energy").textContent=S.energy;$("energyBar").style.width=S.energy+"%";
   $("trust").textContent=S.trust;$("suspicion").textContent=S.suspicion;$("tokens").textContent=S.tokens;
@@ -388,6 +411,7 @@ function renderLog(){
 
 function morningTreatment(){
   if(S.morningDone)return;
+  $("dayActionContent").classList.add("hidden");$("dayActionContent").setAttribute("aria-hidden","true");
   const box=$("morningEvent");box.classList.remove("hidden");
   const effect=drugEffect();
   box.innerHTML=`<h3>晨间治疗</h3><p>护士递来今天的常规药物。药物负荷会影响后续行动的体力消耗、能力成长和离院条件。</p><div class="drugImpact">当前药物状态：${effect.name}。${effect.desc}</div><div class="morningChoices">
@@ -636,8 +660,9 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
 });
 $("newGameBtn").onclick=newGame;$("continueBtn").onclick=continueGame;$("enterBtn").onclick=startFromIntro;
 $("saveBtn").onclick=()=>saveGame(true);$("endDayBtn").onclick=()=>endDay();$("nextDayBtn").onclick=nextDay;
-$("closeEventBtn").onclick=closeEvent;$("endingRestart").onclick=()=>{deleteSave();location.reload()};$("failRestart").onclick=()=>{deleteSave();location.reload()};
+$("closeEventBtn").onclick=closeEvent;$("intelRevealConfirm").onclick=confirmIntelReveal;$("endingRestart").onclick=()=>{deleteSave();location.reload()};$("failRestart").onclick=()=>{deleteSave();location.reload()};
 document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&!$("intelRevealModal").classList.contains("hidden")){e.preventDefault();return}
   if(e.key==="Escape"&&!$("eventModal").classList.contains("hidden"))closeEvent();
   if(e.altKey&&/^[1-6]$/.test(e.key)){
     e.preventDefault();const tab=document.querySelectorAll(".tab")[Number(e.key)-1];if(tab)activatePanel(tab.dataset.panel);

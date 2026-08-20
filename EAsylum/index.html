@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>逃出疯人院 · 可玩 Demo v1.8</title>
+<title>逃出疯人院 · 可玩 Demo v1.11</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="enhancements.css">
 </head>
@@ -15,7 +15,7 @@
         <img src="assets/hospital.webp" alt="">
         <div class="titleShade"></div>
         <div class="titleCopy">
-          <div class="eyebrow">PLAYABLE DEMO · v1.8</div>
+          <div class="eyebrow">PLAYABLE DEMO · v1.11</div>
           <h1>逃出疯人院</h1>
           <p>你被以错误身份送入疗养院。14天后，你将被转往高戒备病区。<br>经营每一天，成长、工作、交朋友、收集证据，并找到真正离开的办法。</p>
           <div class="titleButtons">
@@ -122,14 +122,16 @@
             <div class="dayGoal" id="dayGoal"></div>
           </div>
           <div id="morningEvent" class="morningEvent hidden"></div>
-          <div id="tipsCard" class="tipsCard">
-            <div>
-              <div class="eyebrow">每日玩法 TIPS · 只提供信息</div>
-              <b id="tipTitle">行动与体力</b>
-              <p id="tipText">多数院内活动会同时消耗一次行动和体力；病房休息只恢复体力，不消耗行动。</p>
+          <div id="dayActionContent" class="dayActionContent hidden" aria-hidden="true">
+            <div id="tipsCard" class="tipsCard">
+              <div>
+                <div class="eyebrow">每日玩法 TIPS · 只提供信息</div>
+                <b id="tipTitle">行动与体力</b>
+                <p id="tipText">多数院内活动会同时消耗一次行动和体力；病房休息只恢复体力，不消耗行动。</p>
+              </div>
             </div>
+            <div id="locationGrid" class="locationGrid"></div>
           </div>
-          <div id="locationGrid" class="locationGrid"></div>
         </section>
 
         <section id="growthPanel" class="contentPanel">
@@ -206,6 +208,17 @@
       <p id="eventText"></p>
       <div id="eventChoices" class="eventChoices"></div>
       <button id="closeEventBtn" class="eventChoice eventCloseChoice" type="button"><b>关闭窗口</b><span>返回当前界面，不执行行动</span></button>
+    </div>
+  </section>
+
+  <section id="intelRevealModal" class="modal hidden intelRevealModal" role="dialog" aria-modal="true" aria-labelledby="intelRevealTitle" aria-describedby="intelRevealDesc">
+    <div id="intelRevealCard" class="modalCard compact intelRevealCard">
+      <div id="intelRevealIcon" class="intelRevealIcon" aria-hidden="true">🔎</div>
+      <div class="eyebrow" id="intelRevealType">获得情报</div>
+      <h2 id="intelRevealTitle"></h2>
+      <span id="intelRevealBadge" class="intelRevealBadge"></span>
+      <p id="intelRevealDesc"></p>
+      <button id="intelRevealConfirm" class="primary big full" type="button">确定</button>
     </div>
   </section>
 
