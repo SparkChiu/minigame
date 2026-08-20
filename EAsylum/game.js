@@ -235,9 +235,14 @@ function trackAction(fn){
 }
 function toastLog(msg,notify=true,changes=[]){S.logs.push({day:S.day,message:msg,changes});S.logs=S.logs.slice(-20);renderLog();saveGame(false);if(notify)showToast(msg)}
 
+function setDayActionVisibility(ready=S.morningDone){
+  const content=$("dayActionContent"),visible=Boolean(ready);
+  content.hidden=!visible;content.dataset.ready=String(visible);content.setAttribute("aria-hidden",String(!visible));content.style.display=visible?"block":"none";
+  if(visible)content.classList.remove("hidden");else content.classList.add("hidden");
+}
 function render(){
   normalizeStats();
-  const dayActionContent=$("dayActionContent");dayActionContent.classList.toggle("hidden",!S.morningDone);dayActionContent.setAttribute("aria-hidden",String(!S.morningDone));
+  setDayActionVisibility(S.morningDone);
   $("day").textContent=S.day;$("period").textContent=["上午","中午","下午","傍晚"][S.period]||"傍晚";
   $("energy").textContent=S.energy;$("energyBar").style.width=S.energy+"%";
   $("trust").textContent=S.trust;$("suspicion").textContent=S.suspicion;$("tokens").textContent=S.tokens;
@@ -411,7 +416,7 @@ function renderLog(){
 
 function morningTreatment(){
   if(S.morningDone)return;
-  $("dayActionContent").classList.add("hidden");$("dayActionContent").setAttribute("aria-hidden","true");
+  setDayActionVisibility(false);
   const box=$("morningEvent");box.classList.remove("hidden");
   const effect=drugEffect();
   box.innerHTML=`<h3>晨间治疗</h3><p>护士递来今天的常规药物。药物负荷会影响后续行动的体力消耗、能力成长和离院条件。</p><div class="drugImpact">当前药物状态：${effect.name}。${effect.desc}</div><div class="morningChoices">
@@ -424,7 +429,8 @@ function morningTreatment(){
     if(k==="full"){S.trust+=6;S.drug+=18;S.energy-=5;gainRelation("nurse",2);toastLog(`你配合完成晨间治疗。当前药物状态：${drugEffect().name}。`)} 
     if(k==="half"){S.trust+=2;S.drug+=8;S.suspicion+=3;toastLog(`你只服下一半，暂时没有被发现。当前药物状态：${drugEffect().name}。`)} 
     if(k==="avoid"){S.trust-=3;S.suspicion+=8;gainSkill("observe",10);toastLog(`你避开了服药，但护士多看了你一眼。当前药物状态：${drugEffect().name}。`)} 
-    S.morningDone=true;box.classList.add("hidden");S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);render();saveGame(false);
+    S.morningDone=true;setDayActionVisibility(true);box.classList.add("hidden");S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);render();saveGame(false);
+    requestAnimationFrame(()=>setDayActionVisibility(S.morningDone));
     setTimeout(triggerDailyStory,180);
   }));
 }

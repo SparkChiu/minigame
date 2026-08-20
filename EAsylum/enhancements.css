@@ -1,4 +1,6 @@
-/* v1.11: readable type scale for phones and tablets */
+/* v1.12: robust mobile reveal after morning treatment */
+.dayActionContent[data-ready="false"] { display: none !important; }
+.dayActionContent[data-ready="true"] { display: block !important; }
 .mobileStatus { display: none; }
 .mobileTopStatus { display: none; }
 .mobileGameTitle { display: none; }
