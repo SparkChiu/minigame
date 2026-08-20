@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>逃出疯人院 · 可玩 Demo v1.4</title>
+<title>逃出疯人院 · 可玩 Demo v1.7</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="enhancements.css">
 </head>
@@ -15,7 +15,7 @@
         <img src="assets/hospital.webp" alt="">
         <div class="titleShade"></div>
         <div class="titleCopy">
-          <div class="eyebrow">PLAYABLE DEMO · v1.4</div>
+          <div class="eyebrow">PLAYABLE DEMO · v1.7</div>
           <h1>逃出疯人院</h1>
           <p>你被以错误身份送入疗养院。14天后，你将被转往高戒备病区。<br>经营每一天，成长、工作、交朋友、收集证据，并找到真正离开的办法。</p>
           <div class="titleButtons">
@@ -60,6 +60,14 @@
       <div class="topstat"><small>怀疑</small><b id="suspicion">15</b></div>
       <div class="topstat"><small>积分</small><b id="tokens">0</b></div>
       <span id="saveState" class="saveState" aria-live="polite">已自动保存</span>
+      <div class="mobileGameTitle">逃离疯人院 <small>by Mootii</small></div>
+      <div class="mobileTopStatus" aria-label="今日状态">
+        <span class="mobileTopStatusLabel">今日状态</span>
+        <span title="体力">⚡<b id="mobileTopEnergy">100</b></span>
+        <span title="药物负荷">💊<b id="mobileTopDrug">0</b></span>
+        <span title="院方信任">🙂<b id="mobileTopTrust">45</b></span>
+        <span title="院方怀疑">👁<b id="mobileTopSuspicion">15</b></span>
+      </div>
       <button id="saveBtn" class="iconBtn" title="保存游戏" aria-label="保存游戏">💾</button>
     </header>
 
@@ -127,16 +135,22 @@
         <section id="growthPanel" class="contentPanel">
           <div class="sectionHead"><div><div class="eyebrow">自我养成</div><h2>把自己经营得更好</h2><p>能力不是为了“打赢”医院，而是为了得到更多工作、关系和行动选择。</p></div></div>
           <div class="growthLayout">
-            <div class="portraitCard"><img src="assets/profile.webp" alt=""><div><b>林默</b><span>东区 2 号病房 · 普通患者</span></div></div>
-            <div id="skillCards" class="skillCards"></div>
-            <div class="statusCard">
-              <h3>身体状态</h3>
-              <div class="statusRow"><span>体力</span><b id="gEnergy"></b></div>
-              <div class="statusRow"><span>药物负荷</span><b id="drug"></b></div>
-              <div class="statusRow"><span>院方信任</span><b id="gTrust"></b></div>
-              <div class="statusRow"><span>院方怀疑</span><b id="gSuspicion"></b></div>
-              <p>药物负荷会在每日休息后下降；怀疑过高会限制行动，信任则会开放更多区域。</p>
+            <div class="profileStatusCard">
+              <div class="profileIdentity">
+                <div class="emojiAvatar" role="img" aria-label="玩家角色头像">🧑</div>
+                <div><b>林默</b><span>东区 2 号病房 · 普通患者</span></div>
+              </div>
+              <div class="profileStatusBody">
+                <h3>身体状态</h3>
+                <div class="statusRow"><span>⚡ 体力</span><b id="gEnergy"></b></div>
+                <div class="statusRow"><span>💊 药物负荷</span><b id="drug"></b></div>
+                <div id="drugEffect" class="drugEffect" aria-live="polite"></div>
+                <div class="statusRow"><span>🙂 院方信任</span><b id="gTrust"></b></div>
+                <div class="statusRow"><span>👁 院方怀疑</span><b id="gSuspicion"></b></div>
+                <p>药物负荷会在每日休息后下降；怀疑过高会限制行动，信任则会开放更多区域。</p>
+              </div>
             </div>
+            <div id="skillCards" class="skillCards"></div>
           </div>
         </section>
 
@@ -160,17 +174,18 @@
 
         <section id="escapePanel" class="contentPanel">
           <div class="sectionHead"><div><div class="eyebrow">长期目标</div><h2>真正“逃出去”</h2><p>翻墙并不能恢复你的身份。你至少需要证据、院外联络，以及一种可执行的离院方案。</p></div></div>
-          <div id="escapeChecklist" class="escapeChecklist"></div>
+          <div class="escapeProgressCard">
+            <div class="escapeProgressSummary">
+              <div><div class="eyebrow">当前进度</div><h3>离院准备</h3></div>
+              <div class="progressRing"><b id="progressPct">0%</b><span>已完成</span></div>
+            </div>
+            <div id="escapeChecklist" class="escapeChecklist"></div>
+          </div>
           <div id="escapeRoutes" class="escapeRoutes"></div>
         </section>
       </main>
 
       <aside class="rightRail">
-        <div class="rightBox">
-          <div class="railTitle">当前进度</div>
-          <div class="progressRing"><b id="progressPct">0%</b><span>离院准备</span></div>
-          <div id="miniChecklist" class="miniChecklist"></div>
-        </div>
         <div class="rightBox">
           <div class="railTitle">今日状态</div>
           <div id="conditionTags" class="conditionTags"></div>

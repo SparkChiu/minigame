@@ -70,6 +70,11 @@ let S=defaultState();
 
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function normalizeStats(){S.energy=clamp(S.energy,0,100);S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);S.drug=clamp(S.drug,0,100)}
+function drugEffect(value=S.drug){
+  if(value>=50)return {name:"强镇静",className:"drug-strong",energyPenalty:6,xpRate:.6,desc:"每次消耗行动的活动额外消耗 6 点体力；能力成长只有 60%；合法离院需低于 60，维修通道需低于 35。"};
+  if(value>=25)return {name:"反应迟钝",className:"drug-mild",energyPenalty:3,xpRate:.8,desc:"每次消耗行动的活动额外消耗 3 点体力；能力成长只有 80%。"};
+  return {name:"头脑清醒",className:"drug-clear",energyPenalty:0,xpRate:1,desc:"行动与能力成长不受药物影响。"};
+}
 function setScreen(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));$(id).classList.add("active")}
 function mergeState(saved){
   const base=defaultState();
@@ -111,17 +116,18 @@ function hasItem(s,id,n=1){return (s.inventory[id]||0)>=n}
 function countIntel(s){return Object.values(s.intel).filter(Boolean).length}
 function evidenceCount(s){return ["transferCopy","originalFile","paymentRecord"].filter(k=>s.intel[k]).length}
 function progressPct(){
-  let n=0,total=6;
+  let n=0,total=7;
   if(evidenceCount(S)>=3)n++;
   if(S.externalContact)n++;
   if(S.intel.originalFile)n++;
   if(S.intel.tunnelMap||S.legalPass)n++;
   if(S.skills.social.lv>=3||S.trust>=75)n++;
   if(S.skills.observe.lv>=3)n++;
+  if(S.drug<60)n++;
   return Math.round(n/total*100)
 }
 function relationHearts(v){const full=Math.min(5,Math.floor(v/20));return "♥".repeat(full)+"♡".repeat(5-full)}
-function gainSkill(id,xp){let sk=S.skills[id];sk.xp+=xp;while(sk.xp>=100&&sk.lv<5){sk.xp-=100;sk.lv++;toastLog(`${skillsMeta[id].name}提升到 Lv.${sk.lv}！`)}}
+function gainSkill(id,xp){const effect=drugEffect(),actualXp=Math.max(1,Math.round(xp*effect.xpRate));let sk=S.skills[id];sk.xp+=actualXp;while(sk.xp>=100&&sk.lv<5){sk.xp-=100;sk.lv++;toastLog(`${skillsMeta[id].name}提升到 Lv.${sk.lv}！`)}}
 function showToast(message,tone="info"){
   const el=$("toast");
   if(!el)return;
@@ -135,7 +141,14 @@ function addIntel(id){
     setTimeout(()=>showToast(`${intelMeta[id].icon} 获得${intelMeta[id].type}：${intelMeta[id].title}`,intelMeta[id].evidence?"evidence":"info"),120);
   }
 }
-function useAction(cost){if(S.actions<=0){toastLog("今天已经没有自由行动了。");return false}if(S.energy<cost){toastLog("体力不足。可以回病房休息。");return false}S.actions--;S.energy=clamp(S.energy-cost,0,100);S.period=Math.min(3,4-S.actions);return true}
+function useAction(cost){
+  if(S.actions<=0){toastLog("今天已经没有自由行动了。");return false}
+  const effect=drugEffect(),totalCost=cost+effect.energyPenalty;
+  if(S.energy<totalCost){toastLog(`体力不足。这次行动需要 ${totalCost} 点体力，其中药物影响增加 ${effect.energyPenalty} 点。`);return false}
+  S.actions--;S.energy=clamp(S.energy-totalCost,0,100);S.period=Math.min(3,4-S.actions);
+  if(effect.energyPenalty>0)toastLog(`${effect.name}：这次行动额外消耗 ${effect.energyPenalty} 点体力，能力成长按 ${Math.round(effect.xpRate*100)}% 计算。`,false);
+  return true;
+}
 function captureFeedback(){
   return {
     energy:S.energy,trust:S.trust,suspicion:S.suspicion,drug:S.drug,tokens:S.tokens,actions:S.actions,
@@ -189,13 +202,14 @@ function render(){
   $("daysLeft").textContent=Math.max(0,15-S.day);
   $("mobileDay").textContent=S.day;$("mobilePeriod").textContent=["上午","中午","下午","傍晚"][S.period]||"傍晚";
   $("mobileActions").textContent=S.actions;$("mobileDaysLeft").textContent=Math.max(0,15-S.day);
+  $("mobileTopEnergy").textContent=S.energy;$("mobileTopDrug").textContent=S.drug;$("mobileTopTrust").textContent=S.trust;$("mobileTopSuspicion").textContent=S.suspicion;
   renderActions();renderLocations();renderGrowth();renderRelations();renderIntel();renderBag();renderEscape();renderConditions();renderLog();renderDailyHint();
 }
 function renderActions(){$("actionPips").innerHTML=Array.from({length:4},(_,i)=>`<i class="${i>=S.actions?'used':''}"></i>`).join("")}
 function renderDailyHint(){
   const tips=[
     ["行动与体力","多数院内活动会同时消耗一次行动和体力；病房休息只恢复体力，不消耗行动。"],
-    ["数值反馈","绿色变化通常有利，红色变化通常代表代价；怀疑和药物负荷下降时会显示为绿色。"],
+    ["晨间治疗","药物负荷达到 25/50 会进入反应迟钝/强镇静，增加行动体力消耗并降低能力成长；夜间会自然下降 14。"],
     ["技能成长","技能经验会跨天保留。等级提升后，会出现更高收益的工作或新的调查方式。"],
     ["信任与怀疑","信任会开放正式工作和通话机会；怀疑过高会让高风险行动更难执行。"],
     ["关系网络","不同人物掌握不同资源：老张留意夜班，陈伯熟悉旧楼，小文连接院外，护士林了解评估流程。"],
@@ -206,7 +220,7 @@ function renderDailyHint(){
     ["剧情分支","同一事件的选择可能影响不同人物的关系，也可能让某条线索以另一种方式出现。"],
     ["线索谜题","部分关键文件藏在编目规则或互相矛盾的标签后，错误答案也会留下数值后果。"],
     ["两条离院路线","合法离院更依赖信任、社交和护士支持；维修通道更依赖体能、观察和陈伯。"],
-    ["每日结算","结束一天会恢复体力，并降低药物负荷与怀疑；能力、关系、物品和情报不会清零。"],
+    ["每日结算","结束一天会恢复体力，药物负荷降低 14、怀疑降低 5；能力、关系、物品和情报不会清零。"],
     ["倒计时","第 15 天上午会触发转院。两条路线都要求三份关键证据和院外联络。"]
   ];
   const [title,text]=tips[(S.day-1)%tips.length];
@@ -224,10 +238,10 @@ function activatePanel(panelId){
 function renderLocations(){
   $("locationGrid").innerHTML="";
   locations.forEach(l=>{
-    const open=l.unlock(S);
+    const open=l.unlock(S),effect=drugEffect(),shownCost=l.cost+effect.energyPenalty;
     const card=document.createElement("button");card.className="locationCard"+(open?"":" locked");card.dataset.location=l.id;
     card.disabled=!open;card.setAttribute("aria-label",open?`${l.name}，${l.desc}`:`${l.name}，未开放：${l.reason}`);
-    card.innerHTML=`<img src="assets/${l.img}" alt="${l.name}"><div class="locationBody"><div class="locationTitle">${l.name}</div><p>${l.desc}</p><div class="locationMeta"><span>${l.cost?`体力 -${l.cost}`:"可恢复体力"}</span><span>${open?"进入 →":"未开放"}</span></div></div>${open?"":`<div class="lockReason">🔒 ${l.reason}</div>`}`;
+    card.innerHTML=`<img src="assets/${l.img}" alt="${l.name}"><div class="locationBody"><div class="locationTitle">${l.name}</div><p>${l.desc}</p><div class="locationMeta"><span>${l.cost?`体力约 -${shownCost}${effect.energyPenalty?`（药物 +${effect.energyPenalty}）`:""}`:"可恢复体力"}</span><span>${open?"进入 →":"未开放"}</span></div></div>${open?"":`<div class="lockReason">🔒 ${l.reason}</div>`}`;
     if(open)card.onclick=()=>openLocation(l.id);
     $("locationGrid").appendChild(card);
   });
@@ -240,6 +254,7 @@ function renderGrowth(){
     $("skillCards").appendChild(d);
   });
   $("gEnergy").textContent=S.energy+"/100";$("drug").textContent=S.drug;$("gTrust").textContent=S.trust;$("gSuspicion").textContent=S.suspicion;
+  const effect=drugEffect();$("drugEffect").className=`drugEffect ${effect.className}`;$("drugEffect").textContent=`${effect.name}：${effect.desc}`;
 }
 function renderRelations(){
   const data=[
@@ -287,10 +302,10 @@ function renderBag(){
   document.querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>useItem(b.dataset.use));
 }
 function escapeReadyLegal(){
-  return evidenceCount(S)>=3&&S.externalContact&&S.trust>=78&&S.relations.nurse>=30&&S.skills.social.lv>=3;
+  return evidenceCount(S)>=3&&S.externalContact&&S.trust>=78&&S.relations.nurse>=30&&S.skills.social.lv>=3&&S.drug<60;
 }
 function escapeReadyTunnel(){
-  return evidenceCount(S)>=3&&S.externalContact&&S.intel.tunnelMap&&S.skills.fitness.lv>=3&&S.skills.observe.lv>=3&&S.suspicion<80;
+  return evidenceCount(S)>=3&&S.externalContact&&S.intel.tunnelMap&&S.skills.fitness.lv>=3&&S.skills.observe.lv>=3&&S.suspicion<80&&S.drug<35;
 }
 function escapeReadyAny(){return escapeReadyLegal()||escapeReadyTunnel()}
 function renderEscape(){
@@ -300,7 +315,8 @@ function renderEscape(){
     ["院外联络",S.externalContact?"已建立":"未建立",S.externalContact],
     ["可执行离院方案",(S.legalPass||S.intel.tunnelMap)?"已准备":"未准备",S.legalPass||S.intel.tunnelMap],
     ["观察能力","Lv."+S.skills.observe.lv,S.skills.observe.lv>=3],
-    ["社会支持","社交 Lv."+S.skills.social.lv,S.skills.social.lv>=3]
+    ["社会支持","社交 Lv."+S.skills.social.lv,S.skills.social.lv>=3],
+    ["清醒程度",`药物负荷 ${S.drug}`,S.drug<60]
   ];
   $("escapeChecklist").innerHTML=checks.map(([a,b,ok])=>`<div class="checkItem ${ok?"done":""}"><b>${ok?"✓ ":""}${a}</b><span>${b}</span></div>`).join("");
   const legal=escapeReadyLegal(),tunnel=escapeReadyTunnel();
@@ -309,31 +325,28 @@ function renderEscape(){
     <div class="routeCard ${legal?"ready":""}">
       <div class="eyebrow">方案 A</div><h3>合法离院 · 申诉复核</h3>
       <p>把证据交给院外联系人，并利用稳定的院方评价争取紧急复核。你会从正门走出去。</p>
-      <ul>${req(evidenceCount(S)>=3,`关键证据 ${evidenceCount(S)}/3`)}${req(S.externalContact,"已联系院外")}${req(S.trust>=78,`信任 ${S.trust}/78`)}${req(S.relations.nurse>=30,`护士林关系 ${S.relations.nurse}/30`)}${req(S.skills.social.lv>=3,`社交 Lv.${S.skills.social.lv}/3`)}</ul>
+      <ul>${req(evidenceCount(S)>=3,`关键证据 ${evidenceCount(S)}/3`)}${req(S.externalContact,"已联系院外")}${req(S.trust>=78,`信任 ${S.trust}/78`)}${req(S.relations.nurse>=30,`护士林关系 ${S.relations.nurse}/30`)}${req(S.skills.social.lv>=3,`社交 Lv.${S.skills.social.lv}/3`)}${req(S.drug<60,`药物负荷 ${S.drug}/60`)}</ul>
       <button class="routeBtn" id="legalEscape" ${legal?"":"disabled"}>${legal?"执行合法离院":"条件未满足"}</button>
     </div>
     <div class="routeCard ${tunnel?"ready":""}">
       <div class="eyebrow">方案 B</div><h3>夜间离院 · 维修通道</h3>
       <p>让院外的人带着证据等待，你从旧后勤通道离开。成功后再公开证据恢复身份。</p>
-      <ul>${req(evidenceCount(S)>=3,`关键证据 ${evidenceCount(S)}/3`)}${req(S.externalContact,"已联系院外")}${req(S.intel.tunnelMap,"维修通道地图")}${req(S.skills.fitness.lv>=3,`体能 Lv.${S.skills.fitness.lv}/3`)}${req(S.skills.observe.lv>=3,`观察 Lv.${S.skills.observe.lv}/3`)}${req(S.suspicion<80,`怀疑 ${S.suspicion}/80`)}</ul>
+      <ul>${req(evidenceCount(S)>=3,`关键证据 ${evidenceCount(S)}/3`)}${req(S.externalContact,"已联系院外")}${req(S.intel.tunnelMap,"维修通道地图")}${req(S.skills.fitness.lv>=3,`体能 Lv.${S.skills.fitness.lv}/3`)}${req(S.skills.observe.lv>=3,`观察 Lv.${S.skills.observe.lv}/3`)}${req(S.suspicion<80,`怀疑 ${S.suspicion}/80`)}${req(S.drug<35,`药物负荷 ${S.drug}/35`)}</ul>
       <button class="routeBtn" id="tunnelEscape" ${tunnel?"":"disabled"}>${tunnel?"今晚执行计划":"条件未满足"}</button>
     </div>`;
   if(legal)$("legalEscape").onclick=()=>executeEscape("legal");
   if(tunnel)$("tunnelEscape").onclick=()=>executeEscape("tunnel");
-  const pct=progressPct();$("progressPct").textContent=pct+"%";document.querySelector(".progressRing").style.setProperty("--pct",(pct*3.6)+"deg");
-  $("miniChecklist").innerHTML=[
-    [evidenceCount(S)>=3,`关键证据 ${evidenceCount(S)}/3`],
-    [S.externalContact,"院外联络"],
-    [S.legalPass||S.intel.tunnelMap,"离院方案"],
-    [escapeReadyAny(),"可执行"]
-  ].map(([ok,t])=>`<div class="${ok?"done":""}">${ok?"✓":"○"} ${t}</div>`).join("");
+  const pct=progressPct();
+  $("progressPct").textContent=pct+"%";
+  document.querySelector(".escapeProgressCard .progressRing").style.setProperty("--pct",(pct*3.6)+"deg");
 }
 function renderConditions(){
-  const tags=[`⚡ 体力 ${S.energy}`,`💊 药物负荷 ${S.drug}`,`🙂 信任 ${S.trust}`,`👁 怀疑 ${S.suspicion}`];
+  const effect=drugEffect();
+  const tags=[`⚡ 体力 ${S.energy}`,`💊 药物负荷 ${S.drug}`,`🧠 ${effect.name}`,`🙂 信任 ${S.trust}`,`👁 怀疑 ${S.suspicion}`];
   if(S.externalContact)tags.push("☎️ 已联系院外");
   if(S.legalPass)tags.push("📄 已获复核资格");
   $("conditionTags").innerHTML=tags.map(x=>`<span>${x}</span>`).join("");
-  $("contextTip").textContent=S.suspicion>=65?"怀疑达到较高水平时，高风险调查会更容易带来额外代价。":(evidenceCount(S)>=3&&!S.externalContact?"三份关键证据与院外联络是两项独立的离院条件。":"工作、关系、技能、物品和情报都会跨天保留。");
+  $("contextTip").textContent=S.drug>=25?`当前${effect.name}：${effect.desc}`:(S.suspicion>=65?"怀疑达到较高水平时，高风险调查会更容易带来额外代价。":(evidenceCount(S)>=3&&!S.externalContact?"三份关键证据与院外联络是两项独立的离院条件。":"工作、关系、技能、物品和情报都会跨天保留。"));
 }
 function escapeText(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function renderLog(){
@@ -350,16 +363,17 @@ function renderLog(){
 function morningTreatment(){
   if(S.morningDone)return;
   const box=$("morningEvent");box.classList.remove("hidden");
-  box.innerHTML=`<h3>晨间治疗</h3><p>护士递来今天的常规药物。不同处理会影响信任、清醒程度和怀疑。</p><div class="morningChoices">
-    <button class="secondary" data-med="full"><b>按医嘱服用</b><br><small>信任 +6 · 药物负荷 +18 · 体力 -5</small></button>
+  const effect=drugEffect();
+  box.innerHTML=`<h3>晨间治疗</h3><p>护士递来今天的常规药物。药物负荷会影响后续行动的体力消耗、能力成长和离院条件。</p><div class="drugImpact">当前药物状态：${effect.name}。${effect.desc}</div><div class="morningChoices">
+    <button class="secondary" data-med="full"><b>按医嘱服用</b><br><small>信任 +6 · 药物负荷 +18 · 体力 -5；可能进入迟钝或强镇静</small></button>
     <button class="secondary" data-med="half"><b>只服一半</b><br><small>信任 +2 · 药物负荷 +8 · 怀疑 +3</small></button>
-    <button class="secondary" data-med="avoid"><b>设法避开</b><br><small>保持清醒 · 信任 -3 · 怀疑 +8</small></button>
+    <button class="secondary" data-med="avoid"><b>设法避开</b><br><small>药物负荷不增加 · 信任 -3 · 怀疑 +8</small></button>
   </div>`;
   box.querySelectorAll("[data-med]").forEach(b=>b.onclick=()=>trackAction(()=>{
     const k=b.dataset.med;
-    if(k==="full"){S.trust+=6;S.drug+=18;S.energy-=5;S.relations.nurse+=2;toastLog("你配合完成晨间治疗。")} 
-    if(k==="half"){S.trust+=2;S.drug+=8;S.suspicion+=3;toastLog("你只服下一半，暂时没有被发现。")} 
-    if(k==="avoid"){S.trust-=3;S.suspicion+=8;gainSkill("observe",10);toastLog("你避开了服药，但护士多看了你一眼。")} 
+    if(k==="full"){S.trust+=6;S.drug+=18;S.energy-=5;S.relations.nurse+=2;toastLog(`你配合完成晨间治疗。当前药物状态：${drugEffect().name}。`)} 
+    if(k==="half"){S.trust+=2;S.drug+=8;S.suspicion+=3;toastLog(`你只服下一半，暂时没有被发现。当前药物状态：${drugEffect().name}。`)} 
+    if(k==="avoid"){S.trust-=3;S.suspicion+=8;gainSkill("observe",10);toastLog(`你避开了服药，但护士多看了你一眼。当前药物状态：${drugEffect().name}。`)} 
     S.morningDone=true;box.classList.add("hidden");S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);render();saveGame(false);
     setTimeout(triggerDailyStory,180);
   }));
@@ -377,7 +391,13 @@ function openEvent({eyebrow="行动",title,text,img="ward.webp",choices=[]}){
   lastFocusedElement=document.activeElement;
   $("eventEyebrow").textContent=eyebrow;$("eventTitle").textContent=title;$("eventText").textContent=text;$("eventImg").src="assets/"+img;
   $("eventChoices").innerHTML="";
-  choices.forEach(c=>{const b=document.createElement("button");b.className="eventChoice";b.innerHTML=`<b>${c.title}</b><span>${c.sub||""}</span>`;b.onclick=()=>{trackAction(()=>{if(c.fn)c.fn()});closeEvent()};$("eventChoices").appendChild(b)});
+  choices.forEach(c=>{
+    const b=document.createElement("button"),effect=drugEffect();b.className="eventChoice";
+    let sub=c.sub||"";
+    if(effect.energyPenalty>0)sub=sub.replace(/体力 -(\d+)/g,(_,n)=>`体力 -${Number(n)+effect.energyPenalty}（含药物 +${effect.energyPenalty}）`);
+    if(effect.xpRate<1&&/(XP|成长)/.test(sub))sub+=` · 当前成长效率 ${Math.round(effect.xpRate*100)}%`;
+    b.innerHTML=`<b>${c.title}</b><span>${sub}</span>`;b.onclick=()=>{trackAction(()=>{if(c.fn)c.fn()});closeEvent()};$("eventChoices").appendChild(b)
+  });
   $("eventModal").classList.remove("hidden");
   requestAnimationFrame(()=>( $("eventChoices").querySelector("button") || $("closeEventBtn") ).focus());
 }

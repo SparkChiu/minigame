@@ -1,5 +1,7 @@
-/* v1.4: prominent daily feedback, explicit stat changes, daily tips and story puzzles */
+/* v1.7: meaningful medication effects and updated mobile credit */
 .mobileStatus { display: none; }
+.mobileTopStatus { display: none; }
+.mobileGameTitle { display: none; }
 .saveState { font-size: 10px; color: #d2d9c5; white-space: nowrap; }
 .topbar .logo { margin-right: auto; }
 .activityDock { margin-bottom: 18px; padding: 16px; background: linear-gradient(135deg,#3f5545,#58705a); color: #fff8e6; border: 4px solid #71866e; border-left: 9px solid #e8ad63; border-radius: 14px; box-shadow: 0 7px 0 rgba(62,79,64,.2); }
@@ -23,6 +25,25 @@
 .tipsCard { background: #edf1d7; border: 3px solid #8ba078; border-left: 8px solid #6f8c61; border-radius: 12px; padding: 13px 15px; margin-bottom: 14px; box-shadow: 0 4px 0 rgba(79,98,73,.15); }
 .tipsCard b { display: block; font-size: 17px; margin-top: 3px; }
 .tipsCard p { margin: 4px 0 0; color: #65705f; font-size: 12px; line-height: 1.6; }
+.growthLayout { grid-template-columns: 270px minmax(0,1fr); }
+.profileStatusCard { overflow: hidden; align-self: start; background: #f9f2dc; border: 3px solid #a6b092; border-radius: 11px; }
+.profileIdentity { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 18px 14px 14px; text-align: center; }
+.profileIdentity b,.profileIdentity span { display: block; }
+.profileIdentity b { font-size: 18px; }
+.profileIdentity span { margin-top: 3px; color: #65705f; font-size: 11px; }
+.emojiAvatar { width: 112px; height: 112px; display: grid; place-items: center; background: linear-gradient(145deg,#dce5cd,#aebf9f); border: 4px solid #839379; border-radius: 50%; font-size: 66px; line-height: 1; text-shadow: 0 4px rgba(66,82,68,.14); }
+.profileStatusBody { padding: 4px 14px 14px; border-top: 2px dashed #b9b9a3; }
+.profileStatusBody h3 { margin: 12px 0 4px; }
+.profileStatusBody p { margin-bottom: 0; color: #65705f; font-size: 11px; line-height: 1.55; }
+.drugEffect { margin: 7px 0; padding: 8px 9px; border: 2px solid #aab49d; border-radius: 8px; background: #edf0df; color: #586454; font-size: 10px; font-weight: 800; line-height: 1.5; }
+.drugEffect.drug-mild { background: #f4e9cb; border-color: #c7a96c; color: #755e34; }
+.drugEffect.drug-strong { background: #f1d9ce; border-color: #c58d78; color: #81483c; }
+.drugImpact { margin: 9px 0 12px; padding: 9px 11px; background: #e9eddb; border-left: 5px solid #819477; border-radius: 7px; color: #586454; font-size: 11px; font-weight: 800; line-height: 1.5; }
+.escapeProgressCard { margin-bottom: 18px; padding: 16px; background: #f5f0dc; border: 3px solid #95a487; border-left: 8px solid #6f8c61; border-radius: 12px; box-shadow: 0 4px 0 rgba(79,98,73,.13); }
+.escapeProgressSummary { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+.escapeProgressSummary h3 { margin: 4px 0 0; font-size: 23px; }
+.escapeProgressSummary .progressRing { flex: 0 0 auto; width: 104px; height: 104px; margin: 0; }
+.escapeProgressCard .escapeChecklist { margin-bottom: 0; }
 .toast { position: fixed; left: 50%; bottom: 28px; z-index: 100; max-width: min(540px,88vw); transform: translate(-50%,18px); background: #34483a; color: #fff9e6; border: 2px solid #9caf8f; border-radius: 10px; padding: 11px 16px; font-weight: 800; font-size: 13px; box-shadow: 0 8px 24px rgba(35,48,38,.3); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
 .toast.show { opacity: 1; transform: translate(-50%,0); }
 .toast.evidence { background: #5c7048; border-color: #d7c56d; }
@@ -43,9 +64,16 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
   .topbar .logo { display: none; }
 }
 @media (max-width: 760px) {
-  .topbar { height: 58px; justify-content: space-between; }
+  .topbar { height: 58px; justify-content: space-between; gap: 6px; }
   .topbar .topstat { display: none; }
-  .topbar .saveState { margin-left: auto; }
+  .topbar .saveState { display: none; }
+  .mobileGameTitle { min-width: 80px; display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-start; margin-right: auto; color: #fff8e6; font-size: 11px; font-weight: 950; line-height: 1.1; white-space: nowrap; }
+  .mobileGameTitle small { margin-top: 2px; color: #becbb7; font-size: 8px; font-weight: 700; }
+  .mobileTopStatus { min-width: 0; display: flex; flex: 0 1 auto; align-items: center; justify-content: flex-end; gap: 5px; overflow: hidden; color: #fff8e6; font-size: 10px; white-space: nowrap; }
+  .mobileTopStatus span { display: inline-flex; align-items: center; gap: 2px; }
+  .mobileTopStatus .mobileTopStatusLabel { display: none; }
+  .mobileTopStatus b { color: #ffe2a9; font-size: 11px; }
+  .topbar .iconBtn { flex: 0 0 auto; }
   .mobileStatus { position: sticky; top: 58px; z-index: 19; display: flex; justify-content: space-around; gap: 7px; background: #e8ecd8; border-bottom: 3px solid #9eaa8d; padding: 7px 8px; font-size: 11px; }
   .mobileStatus span { white-space: nowrap; }
   .activityDock { padding: 13px; border-left-width: 6px; }
@@ -59,6 +87,11 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
   .modalCard { width: 100%; padding: 15px; }
   .eventImage { height: 190px; }
   .dayEndStats,.endingStats { grid-template-columns: repeat(2,1fr); }
+  .growthLayout { grid-template-columns: 1fr; }
+  .profileIdentity { flex-direction: row; justify-content: flex-start; text-align: left; }
+  .emojiAvatar { width: 82px; height: 82px; font-size: 49px; }
+  .escapeProgressSummary { align-items: flex-start; }
+  .escapeProgressSummary .progressRing { width: 92px; height: 92px; }
 }
 @media (max-width: 430px) {
   .pillars { grid-template-columns: 1fr; }
@@ -69,4 +102,7 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
   .tabs { gap: 3px; }
   .tab { font-size: 15px; }
   .saveState { display: none; }
+  .mobileGameTitle { min-width: 72px; font-size: 10px; }
+  .mobileTopStatus { gap: 3px; font-size: 9px; }
+  .mobileTopStatus b { font-size: 10px; }
 }
