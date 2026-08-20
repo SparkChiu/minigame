@@ -1,6 +1,7 @@
-/* v1.12: robust mobile reveal after morning treatment */
+/* v1.13: cache-safe mobile reveal after morning treatment */
 .dayActionContent[data-ready="false"] { display: none !important; }
 .dayActionContent[data-ready="true"] { display: block !important; }
+.titleButtons #continueBtn { color: #2f4034; text-shadow: none; }
 .mobileStatus { display: none; }
 .mobileTopStatus { display: none; }
 .mobileGameTitle { display: none; }

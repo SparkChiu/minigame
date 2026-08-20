@@ -237,7 +237,7 @@ function toastLog(msg,notify=true,changes=[]){S.logs.push({day:S.day,message:msg
 
 function setDayActionVisibility(ready=S.morningDone){
   const content=$("dayActionContent"),visible=Boolean(ready);
-  content.hidden=!visible;content.dataset.ready=String(visible);content.setAttribute("aria-hidden",String(!visible));content.style.display=visible?"block":"none";
+  content.dataset.ready=String(visible);content.setAttribute("aria-hidden",String(!visible));content.style.display=visible?"block":"none";
   if(visible)content.classList.remove("hidden");else content.classList.add("hidden");
 }
 function render(){
@@ -430,7 +430,7 @@ function morningTreatment(){
     if(k==="half"){S.trust+=2;S.drug+=8;S.suspicion+=3;toastLog(`你只服下一半，暂时没有被发现。当前药物状态：${drugEffect().name}。`)} 
     if(k==="avoid"){S.trust-=3;S.suspicion+=8;gainSkill("observe",10);toastLog(`你避开了服药，但护士多看了你一眼。当前药物状态：${drugEffect().name}。`)} 
     S.morningDone=true;setDayActionVisibility(true);box.classList.add("hidden");S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);render();saveGame(false);
-    requestAnimationFrame(()=>setDayActionVisibility(S.morningDone));
+    requestAnimationFrame(()=>{setDayActionVisibility(S.morningDone);if(window.matchMedia?.("(max-width: 760px)")?.matches)$("dayActionContent").scrollIntoView({behavior:"smooth",block:"start"})});
     setTimeout(triggerDailyStory,180);
   }));
 }
