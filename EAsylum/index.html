@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>逃出疯人院 · 可玩 Demo v1.14</title>
+<title>逃出疯人院 · 可玩 Demo v1.15</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="style.css?v=1.14">
-<link rel="stylesheet" href="enhancements.css?v=1.14">
+<link rel="stylesheet" href="style.css?v=1.15">
+<link rel="stylesheet" href="enhancements.css?v=1.15">
 </head>
 <body>
 <div id="app">
@@ -18,7 +18,7 @@
         <img src="assets/hospital.webp" alt="">
         <div class="titleShade"></div>
         <div class="titleCopy">
-          <div class="eyebrow">PLAYABLE DEMO · v1.14</div>
+          <div class="eyebrow">PLAYABLE DEMO · v1.15</div>
           <h1>逃出疯人院</h1>
           <p>你被以错误身份送入疗养院。14天后，你将被转往高戒备病区。<br>经营每一天，成长、工作、交朋友、收集证据，并找到真正离开的办法。</p>
           <div class="titleButtons">
@@ -170,7 +170,7 @@
         </section>
 
         <section id="bagPanel" class="contentPanel">
-          <div class="sectionHead"><div><div class="eyebrow">随身物资</div><h2>你的背包</h2><p>小卖部已经移入“院内生活”。进入会消耗一次行动，进入后可连续购买。</p></div></div>
+          <div class="sectionHead"><div><div class="eyebrow">随身物资</div><h2>你的背包</h2><p>小卖部已经移入“院内生活”。进入免费，每次进入后的第一次成功购买消耗一次行动。</p></div></div>
           <div class="bagOnly"><div id="inventoryGrid" class="inventoryGrid"></div></div>
         </section>
 
@@ -224,9 +224,9 @@
 
   <section id="shopModal" class="modal hidden shopModal" role="dialog" aria-modal="true" aria-labelledby="shopModalTitle">
     <div class="modalCard shopModalCard">
-      <div class="eyebrow">院内生活 · 已消耗 1 次行动</div>
+      <div class="eyebrow">院内生活 · 免费进入</div>
       <h2 id="shopModalTitle">院内小卖部</h2>
-      <p>本次进入期间可以连续购买，购买本身不再消耗行动。离开后再次进入仍需消耗行动。</p>
+      <p id="shopActionRule">本次进入的第一次成功购买将消耗 1 次行动；完成首购后，继续购买不再消耗行动。</p>
       <div class="shopBalance">当前积分：<b id="shopModalTokens">0</b></div>
       <div id="modalShopGrid" class="shopGrid"></div>
       <button id="closeShopBtn" class="eventChoice eventCloseChoice" type="button"><b>离开小卖部</b><span>返回院内生活</span></button>
@@ -279,6 +279,6 @@
   </section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-<script src="game.js?v=1.14"></script>
+<script src="game.js?v=1.15"></script>
 </body>
 </html>
