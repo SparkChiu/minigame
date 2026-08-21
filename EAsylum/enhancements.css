@@ -1,4 +1,4 @@
-/* v1.17: balanced drug-load recovery through sleep and ward rest */
+/* v1.18: centered, enlarged action-result and tip notifications */
 .dayActionContent[data-ready="false"] { display: none !important; }
 .dayActionContent[data-ready="true"] { display: block !important; }
 .titleButtons #continueBtn { color: #2f4034; text-shadow: none; }
@@ -73,10 +73,13 @@
 .escapeProgressSummary h3 { margin: 4px 0 0; font-size: 23px; }
 .escapeProgressSummary .progressRing { flex: 0 0 auto; width: 104px; height: 104px; margin: 0; }
 .escapeProgressCard .escapeChecklist { margin-bottom: 0; }
-.toast { position: fixed; left: 50%; bottom: 28px; z-index: 100; max-width: min(540px,88vw); transform: translate(-50%,18px); background: #34483a; color: #fff9e6; border: 2px solid #9caf8f; border-radius: 10px; padding: 11px 16px; font-weight: 800; font-size: 13px; box-shadow: 0 8px 24px rgba(35,48,38,.3); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
-.toast.show { opacity: 1; transform: translate(-50%,0); }
+.toast { position: fixed; left: 50%; top: 50%; bottom: auto; z-index: 100; width: min(680px,calc(100vw - 32px)); max-width: none; min-height: 116px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%,calc(-50% + 18px)) scale(.98); background: rgba(52,72,58,.97); color: #fff9e6; border: 3px solid #b8caa9; border-radius: 16px; padding: 20px 26px 22px; font-weight: 950; font-size: 20px; line-height: 1.55; letter-spacing: .2px; text-align: center; text-wrap: balance; box-shadow: 0 18px 48px rgba(25,35,28,.46),0 0 0 5px rgba(236,242,220,.14); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity .2s ease,transform .2s ease; }
+.toast::before { content: "行动结果 / 提示"; display: block; margin-bottom: 7px; color: #dce9ca; font-size: 12px; font-weight: 950; letter-spacing: 2px; }
+.toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 .toast.evidence { background: #5c7048; border-color: #d7c56d; }
+.toast.evidence::before { content: "获得重要情报"; color: #fff0a8; }
 .toast.danger { background: #873f35; border-color: #e1a38c; }
+.toast.danger::before { content: "注意"; color: #ffd9c9; }
 .routeCard li.met { color: #416f43; font-weight: 800; }
 .routeCard li.missing { color: #8b4e42; }
 .locationCard:disabled { color: inherit; }
@@ -109,7 +112,8 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
   .activityHead { flex-direction: column; gap: 4px; }
   .activityMeta { justify-content: flex-start; }
   .activityLog { max-height: 250px; }
-  .toast { bottom: 76px; }
+  .toast { top: 50%; bottom: auto; width: calc(100vw - 24px); min-height: 108px; padding: 18px 17px 20px; border-radius: 14px; font-size: 18px; line-height: 1.55; }
+  .toast::before { margin-bottom: 6px; font-size: 12px; }
   .sectionHead { flex-direction: column; gap: 10px; }
   .dayGoal { max-width: none; width: 100%; }
   .modal { padding: 2vh 8px; }
