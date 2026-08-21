@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id);
 const SAVE_KEY="escape_asylum_demo_v1_save";
-const SAVE_VERSION=4;
+const SAVE_VERSION=5;
 let toastTimer=null;
 let lastFocusedElement=null;
 let intelRevealQueue=[];
@@ -25,7 +25,7 @@ const itemMeta={
   envelope:{name:"防水信封",icon:"✉️",desc:"保护证据原件的关键材料，可从小文处获得或购买。"},
   flashlight:{name:"袖珍手电",icon:"🔦",desc:"夜间穿过维修通道不可缺少的照明工具。"},
   form:{name:"复核申请表",icon:"📝",desc:"合法离院的关键表格，只能通过帮助护士林获得。"},
-  casefile:{name:"密封证据包",icon:"🗂️",desc:"由三份关键证据、复写纸与防水信封整理而成，两条离院路线都需要。"}
+  casefile:{name:"密封证据包",icon:"🗂️",desc:"由三份关键证据、复写纸与防水信封整理而成，是合法离院方案 A 的关键物品。"}
 };
 
 const requestMeta={
@@ -34,6 +34,7 @@ const requestMeta={
   xiaowen:{item:"notebook",flag:"xiaowenNotebook",gain:24,reward:"防水信封 ×1",rewardItem:"envelope"},
   nurse:{item:"book",flag:"nurseBook",gain:24,reward:"复核申请表 ×1",rewardItem:"form"}
 };
+const shopCatalog=[["tea",8],["book",12],["snack",6],["notebook",10],["phonecard",18],["soap",8],["carbon",14],["envelope",16],["flashlight",24]];
 
 const intelMeta={
   wristband:{title:"错误腕带编号",icon:"🏷️",type:"线索",desc:"你的腕带编号与病历页码根本对不上。"},
@@ -46,11 +47,13 @@ const intelMeta={
   transferCopy:{title:"被改动的转院单",icon:"🧾",type:"关键证据",desc:"转院单上的原始姓名被覆盖，日期也被改过。",evidence:true},
   originalFile:{title:"病历原件",icon:"📁",type:"关键证据",desc:"原始入院记录显示：送你入院的人并非登记家属。",evidence:true},
   paymentRecord:{title:"私人付款记录",icon:"💳",type:"关键证据",desc:"有人持续向院外中间人支付“照护费用”。",evidence:true},
-  tunnelMap:{title:"维修通道地图",icon:"🗺️",type:"离院方案",desc:"旧后勤通道可以绕开正门，出口通向花园外侧。"}
+  tunnelMap:{title:"维修通道地图",icon:"🗺️",type:"离院方案",desc:"旧后勤通道可以绕开正门，出口通向花园外侧。"},
+  mediaPlan:{title:"旧报社公开计划",icon:"📰",type:"隐藏离院方案",desc:"老张认出了付款经手人。只要小文的院外志愿者同步公开记录，媒体可以在院方转移你之前到场。"}
 };
 
 const locations=[
-  {id:"ward",name:"病房",img:"ward.webp",cost:0,desc:"休息、整理床位，恢复体力或提升日常评价。",unlock:()=>true},
+  {id:"ward",name:"病房",img:"ward.webp",cost:0,desc:"休息和整理床位都会消耗行动；休息可以恢复体力。",unlock:()=>true},
+  {id:"shop",name:"院内小卖部",img:"cafeteria.webp",cost:0,desc:"进入消耗 1 次行动；进入后可连续购买物品，不再额外消耗行动。",unlock:()=>true},
   {id:"workshop",name:"工疗工作坊",img:"workshop.webp",cost:18,desc:"工作赚积分和材料，提升工作技能。",unlock:()=>true},
   {id:"garden",name:"康复花园",img:"garden.webp",cost:10,desc:"和病友相处、锻炼身体，也会遇到随机事件。",unlock:()=>true},
   {id:"library",name:"图书室",img:"library.webp",cost:12,desc:"阅读院规、做记录，提高观察与社交能力。",unlock:()=>true},
@@ -63,15 +66,15 @@ const locations=[
 ];
 
 const defaultState=()=>({
-  day:1, period:0, actions:4, energy:100, trust:45, suspicion:15, drug:0, tokens:0,
+  day:1, period:0, actions:5, maxActions:5, energy:100, trust:45, suspicion:15, drug:0, tokens:0,
   skills:{
     fitness:{lv:1,xp:0},work:{lv:1,xp:0},social:{lv:1,xp:0},observe:{lv:1,xp:0}
   },
   relations:{zhang:10,chen:0,xiaowen:0,nurse:5},
   requests:{zhangTea:false,chenSnack:false,xiaowenNotebook:false,nurseBook:false},
   inventory:{tea:0,book:0,snack:1,notebook:0,phonecard:0,material:0,soap:0,carbon:0,envelope:0,flashlight:0,form:0,casefile:0},
-  intel:{wristband:false,rules:false,trayMark:false,catalogNote:false,foldedNote:false,stampMismatch:false,nightRoster:false,transferCopy:false,originalFile:false,paymentRecord:false,tunnelMap:false},
-  storyFlags:{xiaowenNote:false,inspection:false,chenValve:false},
+  intel:{wristband:false,rules:false,trayMark:false,catalogNote:false,foldedNote:false,stampMismatch:false,nightRoster:false,transferCopy:false,originalFile:false,paymentRecord:false,tunnelMap:false,mediaPlan:false},
+  storyFlags:{xiaowenNote:false,inspection:false,chenValve:false,mediaRoute:false,confinementActive:false,confinementCount:0},
   externalContact:false,
   legalPass:false,
   morningDone:false,
@@ -84,11 +87,12 @@ const defaultState=()=>({
 let S=defaultState();
 
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-function normalizeStats(){S.energy=clamp(S.energy,0,100);S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);S.drug=clamp(S.drug,0,100)}
+function dailyActionAllowance(value=S.drug){return value>=50?3:(value>=25?4:5)}
+function normalizeStats(){S.energy=clamp(S.energy,0,100);S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);S.drug=clamp(S.drug,0,100);S.maxActions=clamp(Number(S.maxActions)||dailyActionAllowance(S.drug),3,5);S.actions=clamp(Number(S.actions)||0,0,S.maxActions)}
 function drugEffect(value=S.drug){
-  if(value>=50)return {name:"强镇静",className:"drug-strong",energyPenalty:6,xpRate:.6,desc:"每次消耗行动的活动额外消耗 6 点体力；能力成长只有 60%；合法离院需低于 60，维修通道需低于 35。"};
-  if(value>=25)return {name:"反应迟钝",className:"drug-mild",energyPenalty:3,xpRate:.8,desc:"每次消耗行动的活动额外消耗 3 点体力；能力成长只有 80%。"};
-  return {name:"头脑清醒",className:"drug-clear",energyPenalty:0,xpRate:1,desc:"行动与能力成长不受药物影响。"};
+  if(value>=50)return {name:"强镇静",className:"drug-strong",energyPenalty:6,xpRate:.6,dailyActions:3,desc:"每日只有 3 次行动；每次行动额外消耗 6 点体力；能力成长只有 60%。"};
+  if(value>=25)return {name:"反应迟钝",className:"drug-mild",energyPenalty:3,xpRate:.8,dailyActions:4,desc:"每日有 4 次行动；每次行动额外消耗 3 点体力；能力成长只有 80%。"};
+  return {name:"头脑清醒",className:"drug-clear",energyPenalty:0,xpRate:1,dailyActions:5,desc:"每日有 5 次行动，行动与能力成长不受药物影响。"};
 }
 function setScreen(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));$(id).classList.add("active")}
 function mergeState(saved){
@@ -110,7 +114,8 @@ function mergeState(saved){
   merged.trust=clamp(Number(merged.trust)||0,0,100);
   merged.suspicion=clamp(Number(merged.suspicion)||0,0,100);
   merged.drug=clamp(Number(merged.drug)||0,0,100);
-  merged.actions=clamp(Number(merged.actions)||0,0,4);
+  merged.maxActions=Object.prototype.hasOwnProperty.call(saved,"maxActions")?clamp(Number(merged.maxActions)||dailyActionAllowance(merged.drug),3,5):dailyActionAllowance(merged.drug);
+  merged.actions=clamp(Number(merged.actions)||0,0,merged.maxActions);
   merged.day=clamp(Number(merged.day)||1,1,15);
   merged.saveVersion=SAVE_VERSION;
   return merged;
@@ -130,12 +135,21 @@ function deleteSave(){localStorage.removeItem(SAVE_KEY)}
 function hasItem(s,id,n=1){return (s.inventory[id]||0)>=n}
 function countIntel(s){return Object.values(s.intel).filter(Boolean).length}
 function evidenceCount(s){return ["transferCopy","originalFile","paymentRecord"].filter(k=>s.intel[k]).length}
+function facilityRestriction(s,id){
+  if(s.trust<20&&!['ward','garden'].includes(id))return "院方信任低于 20：只允许病房与花园活动";
+  if(s.trust<30&&!['ward','workshop','garden'].includes(id))return "院方信任低于 30：公共与管理设施暂停开放";
+  if(s.trust<45&&['nurse','archives','visitor'].includes(id))return "院方信任低于 45：管理设施禁止进入";
+  return "";
+}
+function hiddenMediaBranchReady(s=S){
+  return s.day>=8&&s.intel.nightRoster&&s.intel.foldedNote&&s.intel.paymentRecord&&s.requests.zhangTea&&s.requests.xiaowenNotebook&&s.relations.zhang>=50&&s.relations.xiaowen>=45&&s.skills.social.lv>=3;
+}
 function progressPct(){
   let n=0,total=8;
   if(evidenceCount(S)>=3)n++;
   if(S.externalContact)n++;
   if(S.intel.originalFile)n++;
-  if(S.intel.tunnelMap||S.legalPass)n++;
+  if(S.intel.tunnelMap||S.legalPass||S.intel.mediaPlan)n++;
   if(S.skills.social.lv>=3||S.trust>=75)n++;
   if(S.skills.observe.lv>=3)n++;
   if(S.drug<60)n++;
@@ -186,7 +200,7 @@ function useAction(cost){
   if(S.actions<=0){toastLog("今天已经没有自由行动了。");return false}
   const effect=drugEffect(),totalCost=cost+effect.energyPenalty;
   if(S.energy<totalCost){toastLog(`体力不足。这次行动需要 ${totalCost} 点体力，其中药物影响增加 ${effect.energyPenalty} 点。`);return false}
-  S.actions--;S.energy=clamp(S.energy-totalCost,0,100);S.period=Math.min(3,4-S.actions);
+  S.actions--;S.energy=clamp(S.energy-totalCost,0,100);S.period=Math.min(3,Math.floor((S.maxActions-S.actions)*4/Math.max(1,S.maxActions)));
   if(effect.energyPenalty>0)toastLog(`${effect.name}：这次行动额外消耗 ${effect.energyPenalty} 点体力，能力成长按 ${Math.round(effect.xpRate*100)}% 计算。`,false);
   return true;
 }
@@ -231,6 +245,7 @@ function trackAction(fn){
     else S.logs.push({day:S.day,message:"行动完成。",changes});
     S.logs=S.logs.slice(-20);renderLog();saveGame(false);
   }
+  triggerConfinementIfNeeded();
   return result;
 }
 function toastLog(msg,notify=true,changes=[]){S.logs.push({day:S.day,message:msg,changes});S.logs=S.logs.slice(-20);renderLog();saveGame(false);if(notify)showToast(msg)}
@@ -248,17 +263,17 @@ function render(){
   $("trust").textContent=S.trust;$("suspicion").textContent=S.suspicion;$("tokens").textContent=S.tokens;
   $("daysLeft").textContent=Math.max(0,15-S.day);
   $("mobileDay").textContent=S.day;$("mobilePeriod").textContent=["上午","中午","下午","傍晚"][S.period]||"傍晚";
-  $("mobileActions").textContent=S.actions;$("mobileDaysLeft").textContent=Math.max(0,15-S.day);
+  $("mobileActions").textContent=S.actions;$("mobileMaxActions").textContent=S.maxActions;$("mobileDaysLeft").textContent=Math.max(0,15-S.day);
   $("mobileTopEnergy").textContent=S.energy;$("mobileTopDrug").textContent=S.drug;$("mobileTopTrust").textContent=S.trust;$("mobileTopSuspicion").textContent=S.suspicion;
   renderActions();renderLocations();renderGrowth();renderRelations();renderIntel();renderBag();renderEscape();renderConditions();renderLog();renderDailyHint();
 }
-function renderActions(){$("actionPips").innerHTML=Array.from({length:4},(_,i)=>`<i class="${i>=S.actions?'used':''}"></i>`).join("")}
+function renderActions(){$("actionPips").innerHTML=Array.from({length:S.maxActions},(_,i)=>`<i class="${i>=S.actions?'used':''}"></i>`).join("")}
 function renderDailyHint(){
   const tips=[
-    ["行动与体力","多数院内活动会同时消耗一次行动和体力；病房休息只恢复体力，不消耗行动。"],
+    ["行动与体力","所有院内活动（包括病房休息和进入小卖部）都会消耗行动；小卖部内购买不额外消耗。"],
     ["晨间治疗","药物负荷达到 25/50 会进入反应迟钝/强镇静，增加行动体力消耗并降低能力成长；夜间会自然下降 14。"],
     ["技能成长","技能经验会跨天保留。等级提升后，会出现更高收益的工作或新的调查方式。"],
-    ["信任与怀疑","信任会开放正式工作和通话机会；怀疑过高会让高风险行动更难执行。"],
+    ["信任与怀疑","信任低于 45/30/20 会逐级封锁设施；怀疑达到 85 会触发隔离、跳过 1 天并强制服药。"],
     ["关系与请求","聊天只能把关系推进到熟悉阶段；完成角色的物品请求，才能突破关系瓶颈并获得专属资源。"],
     ["线索与证据","普通线索负责解释矛盾，关键证据才能支撑离院申诉；两者在情报页使用不同标记。"],
     ["地点开放","区域由天数、技能、信任或关系共同开放，已经开放的地点会持续保留。"],
@@ -266,13 +281,13 @@ function renderDailyHint(){
     ["物品用途","茶包、点心、笔记本和侦探小说用于关系突破；复写纸与防水信封可组合成密封证据包。"],
     ["剧情分支","同一事件的选择可能影响不同人物的关系，也可能让某条线索以另一种方式出现。"],
     ["线索谜题","部分关键文件藏在编目规则或互相矛盾的标签后，错误答案也会留下数值后果。"],
-    ["两条离院路线","合法离院更依赖信任、社交和护士支持；维修通道更依赖体能、观察和陈伯。"],
+    ["三种离院挑战","方案 A 依赖完整证据与高信任；方案 B 依赖体能、地图和清醒；隐藏方案 C 依赖高关系与媒体曝光。"],
     ["每日结算","结束一天会恢复体力，药物负荷降低 14、怀疑降低 5；能力、关系、物品和情报不会清零。"],
-    ["倒计时","第 15 天上午会触发转院。两条路线都要求三份关键证据和院外联络。"]
+    ["倒计时","第 15 天上午会触发转院。方案 B 不要求关键证据；方案 C 只有满足隐藏剧情条件才会出现。"]
   ];
   const [title,text]=tips[(S.day-1)%tips.length];
   $("dailyHint").textContent=`第 ${S.day} 天的院内生活记录会在上方实时更新。`;
-  $("dayGoal").textContent=`今日信息：剩余 ${S.actions}/4 次行动 · 距转院 ${Math.max(0,15-S.day)} 天`;
+  $("dayGoal").textContent=`今日信息：剩余 ${S.actions}/${S.maxActions} 次行动 · 距转院 ${Math.max(0,15-S.day)} 天`;
   $("tipTitle").textContent=title;$("tipText").textContent=text;
 }
 function activatePanel(panelId){
@@ -285,10 +300,11 @@ function activatePanel(panelId){
 function renderLocations(){
   $("locationGrid").innerHTML="";
   locations.forEach(l=>{
-    const open=l.unlock(S),effect=drugEffect(),shownCost=l.cost+effect.energyPenalty;
+    const restriction=facilityRestriction(S,l.id),open=l.unlock(S)&&!restriction,effect=drugEffect(),shownCost=l.cost+effect.energyPenalty;
     const card=document.createElement("button");card.className="locationCard"+(open?"":" locked");card.dataset.location=l.id;
-    card.disabled=!open;card.setAttribute("aria-label",open?`${l.name}，${l.desc}`:`${l.name}，未开放：${l.reason}`);
-    card.innerHTML=`<img src="assets/${l.img}" alt="${l.name}"><div class="locationBody"><div class="locationTitle">${l.name}</div><p>${l.desc}</p><div class="locationMeta"><span>${l.cost?`体力约 -${shownCost}${effect.energyPenalty?`（药物 +${effect.energyPenalty}）`:""}`:"可恢复体力"}</span><span>${open?"进入 →":"未开放"}</span></div></div>${open?"":`<div class="lockReason">🔒 ${l.reason}</div>`}`;
+    const reason=restriction||l.reason||"尚未开放",costText=l.id==="shop"?"进入消耗 1 行动":(l.cost?`体力约 -${shownCost}${effect.energyPenalty?`（药物 +${effect.energyPenalty}）`:""}`:(l.id==="ward"?"休息也消耗 1 行动":"可恢复体力"));
+    card.disabled=!open;card.setAttribute("aria-label",open?`${l.name}，${l.desc}`:`${l.name}，未开放：${reason}`);
+    card.innerHTML=`<img src="assets/${l.img}" alt="${l.name}"><div class="locationBody"><div class="locationTitle">${l.name}</div><p>${l.desc}</p><div class="locationMeta"><span>${costText}</span><span>${open?"进入 →":"未开放"}</span></div></div>${open?"":`<div class="lockReason">🔒 ${reason}</div>`}`;
     if(open)card.onclick=()=>openLocation(l.id);
     $("locationGrid").appendChild(card);
   });
@@ -342,37 +358,46 @@ function renderBag(){
     d.innerHTML=`<div class="itemTop"><span class="itemIcon">${m.icon}</span><b>× ${n}</b></div><strong>${m.name}</strong><small>${m.desc}</small>${critical}${action}`;
     $("inventoryGrid").appendChild(d);
   });
-  const shop=[["tea",8],["book",12],["snack",6],["notebook",10],["phonecard",18],["soap",8],["carbon",14],["envelope",16],["flashlight",24]];
-  $("shopGrid").innerHTML="";
-  shop.forEach(([id,price])=>{
-    const m=itemMeta[id],d=document.createElement("div");d.className="shopItem";
-    d.innerHTML=`<div class="itemTop"><span class="itemIcon">${m.icon}</span><b>${price} 积分</b></div><strong>${m.name}</strong><small>${m.desc}</small><button class="actionBtn" data-buy="${id}" data-price="${price}">购买</button>`;
-    $("shopGrid").appendChild(d);
-  });
-  document.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buyItem(b.dataset.buy,+b.dataset.price));
   document.querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>useItem(b.dataset.use));
   document.querySelectorAll("[data-craft]").forEach(b=>b.onclick=()=>craftEvidencePacket());
 }
+function renderShopModal(){
+  $("shopModalTokens").textContent=S.tokens;$("modalShopGrid").innerHTML="";
+  shopCatalog.forEach(([id,price])=>{
+    const m=itemMeta[id],d=document.createElement("div");d.className="shopItem";
+    d.innerHTML=`<div class="itemTop"><span class="itemIcon">${m.icon}</span><b>${price} 积分</b></div><strong>${m.name}</strong><small>${m.desc}</small><button class="actionBtn" data-modal-buy="${id}" data-price="${price}">购买</button>`;
+    $("modalShopGrid").appendChild(d);
+  });
+  $("modalShopGrid").querySelectorAll("[data-modal-buy]").forEach(b=>b.onclick=()=>buyItem(b.dataset.modalBuy,+b.dataset.price));
+}
+function shopEvent(){return trackAction(()=>{
+  if(!useAction(0))return;
+  lastFocusedElement=document.activeElement;renderShopModal();$("shopModal").classList.remove("hidden");toastLog("你进入院内小卖部。本次停留期间购买物品不再消耗行动。",false);render();saveGame(false)
+})}
+function closeShop(){$("shopModal").classList.add("hidden");render();saveGame(false);lastFocusedElement?.focus?.();checkAutoEnd()}
 function escapeReadyLegal(){
   return evidenceCount(S)>=3&&hasItem(S,"casefile")&&S.externalContact&&S.legalPass&&S.trust>=78&&S.relations.nurse>=30&&S.skills.social.lv>=3&&S.drug<60;
 }
 function escapeReadyTunnel(){
-  return evidenceCount(S)>=3&&hasItem(S,"casefile")&&hasItem(S,"flashlight")&&S.externalContact&&S.intel.tunnelMap&&S.skills.fitness.lv>=3&&S.skills.observe.lv>=3&&S.suspicion<80&&S.drug<35;
+  return hasItem(S,"flashlight")&&S.externalContact&&S.intel.tunnelMap&&S.skills.fitness.lv>=3&&S.skills.observe.lv>=3&&S.suspicion<80&&S.drug<35;
 }
-function escapeReadyAny(){return escapeReadyLegal()||escapeReadyTunnel()}
+function escapeReadyMedia(){
+  return S.intel.mediaPlan&&S.intel.nightRoster&&S.intel.paymentRecord&&S.externalContact&&S.relations.zhang>=60&&S.relations.xiaowen>=55&&S.skills.social.lv>=4&&S.suspicion<85&&S.drug<50;
+}
+function escapeReadyAny(){return escapeReadyLegal()||escapeReadyTunnel()||escapeReadyMedia()}
 function renderEscape(){
   const checks=[
-    ["3份关键证据",`${evidenceCount(S)}/3`,evidenceCount(S)>=3],
-    ["病历原件",S.intel.originalFile?"已找到":"未找到",S.intel.originalFile],
-    ["密封证据包",hasItem(S,"casefile")?"已整理":"缺复写纸/信封",hasItem(S,"casefile")],
+    ["方案 A：3份关键证据",`${evidenceCount(S)}/3`,evidenceCount(S)>=3],
+    ["方案 A：病历原件",S.intel.originalFile?"已找到":"未找到",S.intel.originalFile],
+    ["方案 A：密封证据包",hasItem(S,"casefile")?"已整理":"缺复写纸/信封",hasItem(S,"casefile")],
     ["院外联络",S.externalContact?"已建立":"未建立",S.externalContact],
-    ["可执行离院方案",(S.legalPass||S.intel.tunnelMap)?"已准备":"未准备",S.legalPass||S.intel.tunnelMap],
+    ["可执行离院方案",(S.legalPass||S.intel.tunnelMap||S.intel.mediaPlan)?"已准备":"未准备",S.legalPass||S.intel.tunnelMap||S.intel.mediaPlan],
     ["观察能力","Lv."+S.skills.observe.lv,S.skills.observe.lv>=3],
     ["社会支持","社交 Lv."+S.skills.social.lv,S.skills.social.lv>=3],
     ["清醒程度",`药物负荷 ${S.drug}`,S.drug<60]
   ];
   $("escapeChecklist").innerHTML=checks.map(([a,b,ok])=>`<div class="checkItem ${ok?"done":""}"><b>${ok?"✓ ":""}${a}</b><span>${b}</span></div>`).join("");
-  const legal=escapeReadyLegal(),tunnel=escapeReadyTunnel();
+  const legal=escapeReadyLegal(),tunnel=escapeReadyTunnel(),media=escapeReadyMedia();
   const req=(ok,text)=>`<li class="${ok?"met":"missing"}">${ok?"✓":"○"} ${text}</li>`;
   $("escapeRoutes").innerHTML=`
     <div class="routeCard ${legal?"ready":""}">
@@ -383,24 +408,38 @@ function renderEscape(){
     </div>
     <div class="routeCard ${tunnel?"ready":""}">
       <div class="eyebrow">方案 B</div><h3>夜间离院 · 维修通道</h3>
-      <p>让院外的人带着证据等待，你从旧后勤通道离开。成功后再公开证据恢复身份。</p>
-      <ul>${req(evidenceCount(S)>=3,`关键证据 ${evidenceCount(S)}/3`)}${req(hasItem(S,"casefile"),"密封证据包")}${req(hasItem(S,"flashlight"),"袖珍手电")}${req(S.externalContact,"已联系院外")}${req(S.intel.tunnelMap,"维修通道地图")}${req(S.skills.fitness.lv>=3,`体能 Lv.${S.skills.fitness.lv}/3`)}${req(S.skills.observe.lv>=3,`观察 Lv.${S.skills.observe.lv}/3`)}${req(S.suspicion<80,`怀疑 ${S.suspicion}/80`)}${req(S.drug<35,`药物负荷 ${S.drug}/35`)}</ul>
+      <p>不等待完整证据，依靠体能、地图与照明直接离开。难点是保持清醒并避开监控；结局中身份问题仍未完全解决。</p>
+      <ul>${req(hasItem(S,"flashlight"),"袖珍手电")}${req(S.externalContact,"已联系院外接应")}${req(S.intel.tunnelMap,"维修通道地图")}${req(S.skills.fitness.lv>=3,`体能 Lv.${S.skills.fitness.lv}/3`)}${req(S.skills.observe.lv>=3,`观察 Lv.${S.skills.observe.lv}/3`)}${req(S.suspicion<80,`怀疑 ${S.suspicion}/80`)}${req(S.drug<35,`药物负荷 ${S.drug}/35`)}</ul>
       <button class="routeBtn" id="tunnelEscape" ${tunnel?"":"disabled"}>${tunnel?"今晚执行计划":"条件未满足"}</button>
-    </div>`;
+    </div>
+    ${S.intel.mediaPlan?`<div class="routeCard mediaRouteCard ${media?"ready":""}">
+      <div class="eyebrow">隐藏方案 C</div><h3>媒体护送 · 公开曝光</h3>
+      <p>让老张的旧报社与小文的志愿者同时公开付款记录，在记者到场时以公共监督迫使院方停止转移。</p>
+      <ul>${req(S.intel.mediaPlan,"已触发旧报社隐藏剧情")}${req(S.intel.nightRoster,"异常夜班记录")}${req(S.intel.paymentRecord,"私人付款记录")}${req(S.externalContact,"已联系院外")}${req(S.relations.zhang>=60,`老张关系 ${S.relations.zhang}/60`)}${req(S.relations.xiaowen>=55,`小文关系 ${S.relations.xiaowen}/55`)}${req(S.skills.social.lv>=4,`社交 Lv.${S.skills.social.lv}/4`)}${req(S.suspicion<85,`怀疑 ${S.suspicion}/85`)}${req(S.drug<50,`药物负荷 ${S.drug}/50`)}</ul>
+      <button class="routeBtn" id="mediaEscape" ${media?"":"disabled"}>${media?"启动公开计划":"尚未发现该方案"}</button>
+    </div>`:""}`;
   if(legal)$("legalEscape").onclick=()=>executeEscape("legal");
   if(tunnel)$("tunnelEscape").onclick=()=>executeEscape("tunnel");
+  if(media)$("mediaEscape").onclick=()=>executeEscape("media");
   const pct=progressPct();
   $("progressPct").textContent=pct+"%";
   document.querySelector(".escapeProgressCard .progressRing").style.setProperty("--pct",(pct*3.6)+"deg");
 }
 function renderConditions(){
   const effect=drugEffect();
-  const tags=[`⚡ 体力 ${S.energy}`,`💊 药物负荷 ${S.drug}`,`🧠 ${effect.name}`,`🙂 信任 ${S.trust}`,`👁 怀疑 ${S.suspicion}`];
+  const tags=[`🎯 行动 ${S.actions}/${S.maxActions}`,`⚡ 体力 ${S.energy}`,`💊 药物负荷 ${S.drug}`,`🧠 ${effect.name}`,`🙂 信任 ${S.trust}`,`👁 怀疑 ${S.suspicion}`];
   if(S.externalContact)tags.push("☎️ 已联系院外");
   if(S.legalPass)tags.push("📄 已获复核资格");
   if(hasItem(S,"casefile"))tags.push("🗂️ 证据包已密封");
+  if(S.trust<45)tags.push("🔒 部分设施受限");
+  if(S.suspicion>=70)tags.push(`⚠️ 隔离警戒 ${S.suspicion}/85`);
   $("conditionTags").innerHTML=tags.map(x=>`<span>${x}</span>`).join("");
-  $("contextTip").textContent=S.drug>=25?`当前${effect.name}：${effect.desc}`:(evidenceCount(S)>=3&&!hasItem(S,"casefile")?"三份关键证据需要与复写纸、防水信封组合，才能成为可带离医院的密封证据包。":(S.suspicion>=65?"怀疑达到较高水平时，高风险调查会更容易带来额外代价。":(evidenceCount(S)>=3&&!S.externalContact?"三份关键证据与院外联络是两项独立的离院条件。":"工作、关系、技能、物品和情报都会跨天保留。")));
+  if(S.suspicion>=70)$("contextTip").textContent=`怀疑达到 85 会触发小黑屋处分：失去 1 天、全部行动取消并被强制服药。当前 ${S.suspicion}/85。`;
+  else if(S.trust<45)$("contextTip").textContent=S.trust<20?"信任低于 20 时只开放病房和花园；可以通过整理病房等稳定行为恢复。":(S.trust<30?"信任低于 30 时只开放病房、工疗工作坊和花园。":"信任低于 45 时，护士站、档案区和访客区禁止进入。");
+  else if(S.drug>=25)$("contextTip").textContent=`当前${effect.name}：${effect.desc}`;
+  else if(evidenceCount(S)>=3&&!hasItem(S,"casefile"))$("contextTip").textContent="三份关键证据需要与复写纸、防水信封组合，才能成为合法离院所需的密封证据包。";
+  else if(evidenceCount(S)>=3&&!S.externalContact)$("contextTip").textContent="三份关键证据与院外联络是两项独立的离院条件。";
+  else $("contextTip").textContent="工作、关系、技能、物品和情报都会跨天保留。";
 }
 function escapeText(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function renderLog(){
@@ -414,22 +453,37 @@ function renderLog(){
   requestAnimationFrame(()=>{$("log").scrollTop=$("log").scrollHeight});
 }
 
+function resolveMorningTreatment(kind,roll=Math.random()){
+  let message="",actionPenalty=0;
+  if(kind==="full"){
+    S.trust+=6;S.suspicion=Math.max(0,S.suspicion-4);S.drug+=18;S.energy-=5;gainRelation("nurse",2);
+    message="你按医嘱完成治疗。记录评价改善，但药物开始累积。";
+  }
+  if(kind==="half"){
+    if(roll<.45){S.trust+=3;S.suspicion=Math.max(0,S.suspicion-2);S.drug+=8;gainRelation("nurse",1);message="你只服下一半，护士没有察觉，还把你的平静表现记入记录。"}
+    else if(roll<.8){S.trust-=2;S.suspicion+=4;S.drug+=8;message="护士注意到你的吞咽动作有些迟疑，记录上多了一处问号。"}
+    else{S.trust-=6;S.suspicion+=9;S.drug+=12;S.energy-=3;message="藏起的半片药被发现。护士重新核对药杯，你的评价明显下降。"}
+  }
+  if(kind==="avoid"){
+    if(roll<.5){S.trust-=2;S.suspicion+=2;message="你避开了服药。护士暂时没有证据，只把你的配合度调低了一点。"}
+    else if(roll<.8){S.trust-=7;S.suspicion+=8;message="护士发现药片没有减少。你的拒绝被写进评估记录。"}
+    else{S.trust-=10;S.suspicion+=15;S.drug+=36;S.energy-=10;actionPenalty=2;message="你被当场发现并遭到强制服药：双倍药物与体力代价，同时失去 2 次当日行动。"}
+  }
+  normalizeStats();S.maxActions=dailyActionAllowance(S.drug);S.actions=Math.max(0,S.maxActions-actionPenalty);
+  return {message,actionPenalty,effect:drugEffect().name};
+}
 function morningTreatment(){
   if(S.morningDone)return;
   setDayActionVisibility(false);
   const box=$("morningEvent");box.classList.remove("hidden");
   const effect=drugEffect();
-  box.innerHTML=`<h3>晨间治疗</h3><p>护士递来今天的常规药物。药物负荷会影响后续行动的体力消耗、能力成长和离院条件。</p><div class="drugImpact">当前药物状态：${effect.name}。${effect.desc}</div><div class="morningChoices">
-    <button class="secondary" data-med="full"><b>按医嘱服用</b><br><small>信任 +6 · 药物负荷 +18 · 体力 -5；可能进入迟钝或强镇静</small></button>
-    <button class="secondary" data-med="half"><b>只服一半</b><br><small>信任 +2 · 药物负荷 +8 · 怀疑 +3</small></button>
-    <button class="secondary" data-med="avoid"><b>设法避开</b><br><small>药物负荷不增加 · 信任 -3 · 怀疑 +8</small></button>
+  box.innerHTML=`<h3>晨间治疗</h3><p>药物状态会决定今天的行动次数：清醒 5 次、迟钝 4 次、强镇静 3 次。冒险处理药片的结果并不固定。</p><div class="drugImpact">当前药物状态：${effect.name}。${effect.desc}</div><div class="morningChoices">
+    <button class="secondary" data-med="full"><b>按医嘱服用</b><br><small>固定：信任 +6 · 怀疑 -4 · 药物 +18 · 体力 -5</small></button>
+    <button class="secondary" data-med="half"><b>只服一半</b><br><small>45% 蒙混过关；35% 引起注意；20% 被发现。信任与怀疑可能改善或恶化。</small></button>
+    <button class="secondary" data-med="avoid"><b>设法避开</b><br><small>50% 小幅掉信任；30% 大幅掉信任；20% 强制服药并失去 2 次行动。</small></button>
   </div>`;
   box.querySelectorAll("[data-med]").forEach(b=>b.onclick=()=>trackAction(()=>{
-    const k=b.dataset.med;
-    if(k==="full"){S.trust+=6;S.drug+=18;S.energy-=5;gainRelation("nurse",2);toastLog(`你配合完成晨间治疗。当前药物状态：${drugEffect().name}。`)} 
-    if(k==="half"){S.trust+=2;S.drug+=8;S.suspicion+=3;toastLog(`你只服下一半，暂时没有被发现。当前药物状态：${drugEffect().name}。`)} 
-    if(k==="avoid"){S.trust-=3;S.suspicion+=8;gainSkill("observe",10);toastLog(`你避开了服药，但护士多看了你一眼。当前药物状态：${drugEffect().name}。`)} 
-    S.morningDone=true;setDayActionVisibility(true);box.classList.add("hidden");S.trust=clamp(S.trust,0,100);S.suspicion=clamp(S.suspicion,0,100);render();saveGame(false);
+    const outcome=resolveMorningTreatment(b.dataset.med);S.morningDone=true;setDayActionVisibility(true);box.classList.add("hidden");toastLog(`${outcome.message} 当前状态：${outcome.effect}，今日 ${S.actions}/${S.maxActions} 次行动。`);render();saveGame(false);
     requestAnimationFrame(()=>{setDayActionVisibility(S.morningDone);if(window.matchMedia?.("(max-width: 760px)")?.matches)$("dayActionContent").scrollIntoView({behavior:"smooth",block:"start"})});
     setTimeout(triggerDailyStory,180);
   }));
@@ -437,8 +491,10 @@ function morningTreatment(){
 function openLocation(id){
   if(!S.morningDone){toastLog("先处理晨间治疗。");return}
   if(S.actions<=0){toastLog("今天没有自由行动了。");return}
+  const location=locations.find(x=>x.id===id),restriction=facilityRestriction(S,id);
+  if(!location||!location.unlock(S)||restriction){toastLog(restriction||location?.reason||"这个地点尚未开放。");return}
   const map={
-    ward:wardEvent,workshop:workshopEvent,garden:gardenEvent,library:libraryEvent,cafeteria:cafeteriaEvent,
+    ward:wardEvent,shop:shopEvent,workshop:workshopEvent,garden:gardenEvent,library:libraryEvent,cafeteria:cafeteriaEvent,
     laundry:laundryEvent,nurse:nurseEvent,archives:archivesEvent,visitor:visitorEvent,maintenance:maintenanceEvent
   };
   map[id]();
@@ -459,7 +515,7 @@ function openEvent({eyebrow="行动",title,text,img="ward.webp",choices=[]}){
 }
 function openSimpleEvent(eyebrow,title,text,icon,img){openEvent({eyebrow,title:`${icon||""} ${title}`,text,img,choices:[{title:"知道了",fn:()=>{}}]})}
 function closeEvent(){$("eventModal").classList.add("hidden");render();saveGame(false);lastFocusedElement?.focus?.();checkAutoEnd()}
-function checkAutoEnd(){if(S.actions<=0&&!S.completed)setTimeout(()=>endDay(),250)}
+function checkAutoEnd(){if(S.storyFlags.confinementActive)return;if(S.actions<=0&&!S.completed)setTimeout(()=>endDay(),250)}
 
 function triggerDailyStory(){
   if(!$("eventModal").classList.contains("hidden"))return;
@@ -488,6 +544,13 @@ function triggerDailyStory(){
       {title:"把缺件情况报告护士站",sub:"信任上升 · 陈伯关系下降",fn:()=>{S.trust+=8;gainRelation("nurse",5);gainRelation("chen",-8,true);toastLog("库房补发了阀门，但陈伯整晚没有再和你说话。")}},
       {title:"藏起附近的备用工具",sub:"材料 +2 · 怀疑上升",fn:()=>{S.inventory.material+=2;S.suspicion+=7;toastLog("你留下了两件可能有用的零件，工具清点却多出了一处缺口。")}}
     ]});
+    return;
+  }
+  const mediaReady=hiddenMediaBranchReady(S);
+  if(mediaReady&&!S.storyFlags.mediaRoute){
+    openEvent({eyebrow:"隐藏剧情 · 旧报社",title:"付款单上的名字，老张见过",text:"老张把夜班记录、求助纸条和付款单并排放好，认出经手人曾是旧报社调查过的中间人。小文说，公益阅读志愿者可以在同一时间把材料发到院外。只要两边同时公开，医院就来不及悄悄转移你。",img:"visitor.webp",choices:[
+      {title:"建立双重公开计划",sub:"开启离院方案 C · 怀疑 +10 · 老张与小文关系上升",fn:()=>{S.storyFlags.mediaRoute=true;S.suspicion+=10;gainRelation("zhang",10);gainRelation("xiaowen",10);addIntel("mediaPlan");toastLog("老张写下旧编辑的号码，小文确定了志愿者的到院时间。第三条离院路线已经出现。")}}
+    ]});
   }
 }
 
@@ -500,8 +563,8 @@ function archiveBoxPuzzle(){
 }
 
 function wardEvent(){
-  openEvent({title:"回到病房",text:"你的床位是少数真正属于自己的空间。休息不会消耗自由行动；整理床位则会用掉一个时段，但能改善院方评价。",img:"ward.webp",choices:[
-    {title:"休息一会儿",sub:"不消耗行动 · 体力 +30",fn:()=>{S.energy=clamp(S.energy+30,0,100);toastLog("你在病房休息，体力恢复。")}},
+  openEvent({title:"回到病房",text:"你的床位是少数真正属于自己的空间。休息和整理床位都会占用一个时段，需要消耗行动。",img:"ward.webp",choices:[
+    {title:"休息一会儿",sub:"消耗 1 行动 · 体力 +30",fn:()=>{if(!useAction(0))return;S.energy=clamp(S.energy+30,0,100);toastLog("你在病房休息，体力恢复。")}},
     {title:"整理床位和公共区域",sub:"消耗 1 行动 · 体力 -5 · 信任 +5",fn:()=>{if(!useAction(5))return;S.trust+=5;S.suspicion=Math.max(0,S.suspicion-2);toastLog("你主动整理了病房，日常评价改善。")}}
   ]});
 }
@@ -594,7 +657,7 @@ function helpNPC(id){
     render();saveGame(false)
   });
 }
-function buyItem(id,price){return trackAction(()=>{if(S.tokens<price){toastLog("积分不够。");return}S.tokens-=price;S.inventory[id]++;toastLog(`购买：${itemMeta[id].name}。`);render()})}
+function buyItem(id,price){return trackAction(()=>{if(S.tokens<price){toastLog("积分不够。");return}S.tokens-=price;S.inventory[id]++;toastLog(`购买：${itemMeta[id].name}。`,false);render();if(!$("shopModal").classList.contains("hidden"))renderShopModal()})}
 function useItem(id){return trackAction(()=>{
   if(id==="snack"&&S.inventory.snack>0){S.inventory.snack--;S.energy=clamp(S.energy+18,0,100);toastLog("你吃了点心，体力恢复。")}
   if(id==="soap"&&S.inventory.soap>0){S.inventory.soap--;S.suspicion=Math.max(0,S.suspicion-6);S.trust+=2;toastLog("你整理好个人状态，查房记录变得更稳定。")}
@@ -607,7 +670,27 @@ function craftEvidencePacket(){return trackAction(()=>{
   toastLog("你用复写纸留下备份，再把三份关键证据封入防水信封。密封证据包已完成。");render();saveGame(false)
 })}
 
+function showConfinementModal(changes=[]){
+  $("confinementText").textContent="怀疑达到 85，院方启动隔离处分。剩余行动全部取消，隔离占用 1 天，并执行强制服药。";
+  $("confinementChanges").innerHTML=changes.map(change=>`<span class="changeChip ${change.tone}">${escapeText(change.text)}</span>`).join("");
+  $("confinementModal").classList.remove("hidden");$("finishConfinementBtn").focus();
+}
+function triggerConfinementIfNeeded(){
+  if(S.completed||S.suspicion<85||S.storyFlags.confinementActive)return false;
+  const before=captureFeedback();S.storyFlags.confinementActive=true;S.storyFlags.confinementCount=(S.storyFlags.confinementCount||0)+1;
+  S.actions=0;S.trust-=8;S.drug+=36;S.energy-=10;S.suspicion=55;normalizeStats();S.maxActions=dailyActionAllowance(S.drug);
+  const changes=feedbackChanges(before,captureFeedback());toastLog("怀疑达到警戒线。你被关进小黑屋，失去一天并遭到强制服药。",false,changes);render();saveGame(false);showConfinementModal(changes);return true;
+}
+function finishConfinement(){
+  if(!S.storyFlags.confinementActive)return;
+  $("confinementModal").classList.add("hidden");S.storyFlags.confinementActive=false;S.day++;
+  if(S.day>=15&&!S.completed){failGame();return}
+  S.period=0;S.drug=Math.max(0,S.drug-10);S.suspicion=Math.max(0,S.suspicion-5);S.energy=clamp(S.energy+30,0,100);S.maxActions=dailyActionAllowance(S.drug);S.actions=S.maxActions;S.morningDone=false;
+  toastLog(`第 ${S.day} 天开始。隔离已经结束，但强制服药的影响仍然存在。`,false);setScreen("gameScreen");render();morningTreatment();saveGame(false)
+}
+
 function endDay(skipConfirmation=false){
+  if(S.storyFlags.confinementActive)return;
   if($("dayEndModal").classList.contains("hidden")===false)return;
   if(!skipConfirmation&&S.actions>0&&!window.confirm(`今天还剩 ${S.actions} 次行动。确定提前结束今天吗？`))return;
   const beforeRest=captureFeedback();
@@ -626,7 +709,7 @@ function endDay(skipConfirmation=false){
   $("dayEndModal").classList.remove("hidden");saveGame(false)
 }
 function nextDay(){
-  S.day++;S.period=0;S.actions=4;S.morningDone=false;
+  S.day++;S.period=0;S.maxActions=dailyActionAllowance(S.drug);S.actions=S.maxActions;S.morningDone=false;
   $("dayEndModal").classList.add("hidden");
   if(S.day>=15&&!S.completed){failGame();return}
   toastLog(`第 ${S.day} 天开始。新的行动与事件会记录在这里。`,false);
@@ -640,14 +723,18 @@ function failGame(){
 function executeEscape(route){
   if(route==="legal"&&!escapeReadyLegal())return;
   if(route==="tunnel"&&!escapeReadyTunnel())return;
+  if(route==="media"&&!escapeReadyMedia())return;
   S.completed=true;saveGame(false);
-  $("endingImage").src=route==="legal"?"assets/garden.webp":"assets/hospital.webp";
+  $("endingImage").src=route==="legal"?"assets/garden.webp":(route==="media"?"assets/visitor.webp":"assets/hospital.webp");
   if(route==="legal"){
     $("endingTitle").textContent="你从正门走了出去。";
     $("endingText").innerHTML="你把密封证据包交给周言，护士林则递交了正式复核申请。复写备份让院方无法收回唯一原件，补充评估也让所有矛盾进入可核对的程序。下午 4:20，你拿回自己的名字和证件。<br><br><b>你没有证明自己“正常”。你只是终于让事实进入了一套能被核对的程序。</b>";
-  }else{
+  }else if(route==="tunnel"){
     $("endingTitle").textContent="花园外面，没有铁门。";
-    $("endingText").innerHTML="陈伯确认的维修通道仍然可用。你用袖珍手电穿过断电的旧锅炉间，带着防水密封的证据包从花园外侧检修口离开。周言已经等在那里。<br><br><b>真正的逃离不是越过那堵墙，而是让墙外的人知道发生过什么。</b>";
+    $("endingText").innerHTML="陈伯确认的维修通道仍然可用。你用袖珍手电穿过断电的旧锅炉间，从花园外侧检修口离开。周言已经等在那里。你获得了自由，但没有完整证据，身份记录仍需要在院外慢慢解决。<br><br><b>这是一条更快的路，也是一条把未完成问题带到墙外的路。</b>";
+  }else{
+    $("endingTitle").textContent="镜头打开时，铁门不能再悄悄关上。";
+    $("endingText").innerHTML="旧报社、公益志愿者和周言在同一分钟公开夜班记录与付款文件。记者来到门口，院方无法再把你的转移处理成内部流程。你在公开监督下离院，调查随后正式启动。<br><br><b>你不是独自证明一切，而是让足够多的人同时看见同一件事。</b>";
   }
   $("endingStats").innerHTML=`<div><b>${S.day}</b><br><small>离院天数</small></div><div><b>${evidenceCount(S)}/3</b><br><small>关键证据</small></div><div><b>${S.trust}</b><br><small>院方信任</small></div><div><b>${S.suspicion}</b><br><small>最终怀疑</small></div>`;
   setScreen("endingScreen");deleteSave()
@@ -657,7 +744,7 @@ function newGame(){
   if(localStorage.getItem(SAVE_KEY)&&!window.confirm("开始新游戏会覆盖当前存档，确定继续吗？"))return;
   S=defaultState();deleteSave();setScreen("introScreen")
 }
-function continueGame(){if(loadGame()){setScreen("gameScreen");render();if(!S.morningDone)morningTreatment();else setTimeout(triggerDailyStory,180)}}
+function continueGame(){if(loadGame()){setScreen("gameScreen");render();if(S.storyFlags.confinementActive)showConfinementModal();else if(S.suspicion>=85)triggerConfinementIfNeeded();else if(!S.morningDone)morningTreatment();else setTimeout(triggerDailyStory,180)}}
 function startFromIntro(){setScreen("gameScreen");render();morningTreatment();saveGame(false)}
 
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
@@ -666,9 +753,11 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
 });
 $("newGameBtn").onclick=newGame;$("continueBtn").onclick=continueGame;$("enterBtn").onclick=startFromIntro;
 $("saveBtn").onclick=()=>saveGame(true);$("endDayBtn").onclick=()=>endDay();$("nextDayBtn").onclick=nextDay;
-$("closeEventBtn").onclick=closeEvent;$("intelRevealConfirm").onclick=confirmIntelReveal;$("endingRestart").onclick=()=>{deleteSave();location.reload()};$("failRestart").onclick=()=>{deleteSave();location.reload()};
+$("closeEventBtn").onclick=closeEvent;$("closeShopBtn").onclick=closeShop;$("finishConfinementBtn").onclick=finishConfinement;$("intelRevealConfirm").onclick=confirmIntelReveal;$("endingRestart").onclick=()=>{deleteSave();location.reload()};$("failRestart").onclick=()=>{deleteSave();location.reload()};
 document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&!$("confinementModal").classList.contains("hidden")){e.preventDefault();return}
   if(e.key==="Escape"&&!$("intelRevealModal").classList.contains("hidden")){e.preventDefault();return}
+  if(e.key==="Escape"&&!$("shopModal").classList.contains("hidden")){closeShop();return}
   if(e.key==="Escape"&&!$("eventModal").classList.contains("hidden"))closeEvent();
   if(e.altKey&&/^[1-6]$/.test(e.key)){
     e.preventDefault();const tab=document.querySelectorAll(".tab")[Number(e.key)-1];if(tab)activatePanel(tab.dataset.panel);
