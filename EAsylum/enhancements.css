@@ -1,4 +1,4 @@
-/* v1.18: centered, enlarged action-result and tip notifications */
+/* v1.19: growth-stat guide and readable responsive reference cards */
 .dayActionContent[data-ready="false"] { display: none !important; }
 .dayActionContent[data-ready="true"] { display: block !important; }
 .titleButtons #continueBtn { color: #2f4034; text-shadow: none; }
@@ -41,6 +41,14 @@
 .tipsCard b { display: block; font-size: 17px; margin-top: 3px; }
 .tipsCard p { margin: 4px 0 0; color: #65705f; font-size: 12px; line-height: 1.6; }
 .growthLayout { grid-template-columns: 270px minmax(0,1fr); }
+.growthGuide { margin-top: 18px; padding: 18px; background: #f5f0dc; border: 3px solid #95a487; border-left: 8px solid #6f8c61; border-radius: 12px; box-shadow: 0 4px 0 rgba(79,98,73,.13); }
+.growthGuideHead h3 { margin: 4px 0 5px; font-size: 23px; }
+.growthGuideHead p { margin: 0; color: #65705f; font-size: 14px; line-height: 1.65; }
+.growthGuideGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 11px; margin-top: 14px; }
+.growthGuideItem { display: flex; align-items: flex-start; gap: 11px; padding: 13px; background: #fff9e8; border: 2px solid #b5bea3; border-radius: 10px; }
+.growthGuideIcon { flex: 0 0 auto; width: 40px; height: 40px; display: grid; place-items: center; background: #e5ead3; border: 2px solid #9caa8b; border-radius: 10px; font-size: 22px; }
+.growthGuideItem b { display: block; margin: 1px 0 4px; color: #3f5542; font-size: 16px; }
+.growthGuideItem p { margin: 0; color: #5e6b5f; font-size: 13px; line-height: 1.65; }
 .profileStatusCard { overflow: hidden; align-self: start; background: #f9f2dc; border: 3px solid #a6b092; border-radius: 11px; }
 .profileIdentity { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 18px 14px 14px; text-align: center; }
 .profileIdentity b,.profileIdentity span { display: block; }
@@ -189,4 +197,13 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
 }
 @media (max-width: 430px) {
   .bagOnly .inventoryGrid,.shopModalCard .shopGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .growthGuide { padding: 15px 13px; }
+  .growthGuideHead h3 { font-size: 21px; }
+  .growthGuideHead p { font-size: 14px; }
+  .growthGuideGrid { grid-template-columns: 1fr; }
+  .growthGuideItem { padding: 12px; }
+  .growthGuideItem b { font-size: 17px; }
+  .growthGuideItem p { font-size: 14px; }
 }

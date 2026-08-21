@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>逃出疯人院 · 可玩 Demo v1.18</title>
+<title>逃出疯人院 · 可玩 Demo v1.19</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="style.css?v=1.18">
-<link rel="stylesheet" href="enhancements.css?v=1.18">
+<link rel="stylesheet" href="style.css?v=1.19">
+<link rel="stylesheet" href="enhancements.css?v=1.19">
 </head>
 <body>
 <div id="app">
@@ -18,7 +18,7 @@
         <img src="assets/hospital.webp" alt="">
         <div class="titleShade"></div>
         <div class="titleCopy">
-          <div class="eyebrow">PLAYABLE DEMO · v1.18</div>
+          <div class="eyebrow">PLAYABLE DEMO · v1.19</div>
           <h1>逃出疯人院</h1>
           <p>你被以错误身份送入疗养院。14天后，你将被转往高戒备病区。<br>经营每一天，成长、工作、交朋友、收集证据，并找到真正离开的办法。</p>
           <div class="titleButtons">
@@ -152,11 +152,28 @@
                 <div id="drugEffect" class="drugEffect" aria-live="polite"></div>
                 <div class="statusRow"><span>🙂 院方信任</span><b id="gTrust"></b></div>
                 <div class="statusRow"><span>👁 院方怀疑</span><b id="gSuspicion"></b></div>
-                <p>药物负荷会在每日休息后下降；怀疑过高会限制行动，信任则会开放更多区域。</p>
+                <p>正常过夜使药物负荷降低 10，病房休息降低 6；怀疑达到 60 会触发小黑屋，信任则决定设施开放范围。</p>
               </div>
             </div>
             <div id="skillCards" class="skillCards"></div>
           </div>
+          <section class="growthGuide" aria-labelledby="growthGuideTitle">
+            <div class="growthGuideHead">
+              <div class="eyebrow">数值说明 · 会怎样影响游戏</div>
+              <h3 id="growthGuideTitle">了解自己的状态与能力</h3>
+              <p>这些数值会直接改变每天能做多少事、可以进入哪里，以及能够执行哪一种离院方案。</p>
+            </div>
+            <div class="growthGuideGrid">
+              <article class="growthGuideItem"><span class="growthGuideIcon">⚡</span><div><b>体力</b><p>行动需要足够体力。病房休息、点心和正常过夜可以恢复；体力不足时无法执行对应行动。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">💊</span><div><b>药物负荷</b><p>低于 25 时每天 5 次行动；25–49 时 4 次、每次额外消耗 3 体力且成长为 80%；达到 50 时为 3 次、额外消耗 6 体力且成长为 60%。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">🙂</span><div><b>院方信任</b><p>信任低于 45、30、20 会逐级封锁设施；方案 A 还要求信任达到 78。稳定活动可以改善评价。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">👁</span><div><b>院方怀疑</b><p>危险调查和避药会增加怀疑。达到 60 会立即中断行动、取消剩余行动并触发小黑屋处分。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">🏃</span><div><b>体能</b><p>提高高消耗行动的准备程度，是维修通道方案 B 的核心能力之一，需要达到 Lv.3。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">🛠️</span><div><b>工作</b><p>提升工疗收益和材料产量，并帮助开放洗衣房等后勤区域，为物品与路线准备资源。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">💬</span><div><b>社交</b><p>推动人物关系、院外联络和复核申请；方案 A 需要 Lv.3，隐藏方案 C 需要 Lv.4。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">🔎</span><div><b>观察</b><p>发现编号、排班和档案矛盾，开放关键调查方式；维修通道方案 B 需要达到 Lv.3。</p></div></article>
+            </div>
+          </section>
         </section>
 
         <section id="relationsPanel" class="contentPanel">
@@ -280,6 +297,6 @@
   </section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-<script src="game.js?v=1.18"></script>
+<script src="game.js?v=1.19"></script>
 </body>
 </html>
