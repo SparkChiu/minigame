@@ -1,7 +1,9 @@
-/* v1.19: growth-stat guide and readable responsive reference cards */
+/* v1.20: progressive onboarding, staged systems and unlimited play days */
 .dayActionContent[data-ready="false"] { display: none !important; }
 .dayActionContent[data-ready="true"] { display: block !important; }
 .titleButtons #continueBtn { color: #2f4034; text-shadow: none; }
+.tab.progressiveHidden { display: none !important; }
+.growthGuideItem.progressiveHidden { display: none !important; }
 .bagOnly .inventoryGrid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .shopModal { z-index: 70; }
 .shopModalCard { max-width: 820px; }
@@ -14,11 +16,18 @@
 .confinementIcon { width: 78px; height: 78px; margin: 0 auto 10px; display: grid; place-items: center; border: 4px solid #8e4e43; border-radius: 50%; background: #edd8ce; font-size: 38px; }
 .confinementCard .logChanges { justify-content: center; margin-bottom: 16px; }
 .mediaRouteCard { grid-column: 1 / -1; border-color: #8b758f; background: #eee4ee; }
-.mobileStatus { display: none; }
-.mobileTopStatus { display: none; }
+.routeDiscoveryNotice { grid-column: 1 / -1; padding: 18px; background: #fff7d9; border: 3px dashed #b89c60; border-radius: 11px; text-align: center; }
+.routeDiscoveryNotice b { display: block; color: #665333; font-size: 18px; }
+.routeDiscoveryNotice p { margin: 7px auto 0; max-width: 680px; color: #74664c; font-size: 14px; line-height: 1.7; }
+.desktopCoreStatus { display: flex; align-items: center; gap: 10px; }
+.desktopCoreStatus .topstat { min-width: 82px; justify-content: center; padding: 7px 10px; border: 1px solid rgba(255,255,255,.13); border-radius: 8px; background: rgba(255,255,255,.08); }
+.desktopCoreStatus .topstat b { color: #ffe2a9; font-size: 20px; }
+.desktopCoreStatus .tokenStat b { color: #ffd36f; }
+.mobileCoreStatus { display: none; }
 .mobileGameTitle { display: none; }
 .saveState { font-size: 10px; color: #d2d9c5; white-space: nowrap; }
 .topbar .logo { margin-right: auto; }
+.gameLayout { grid-template-columns: 150px minmax(0,1fr); }
 .activityDock { margin-bottom: 18px; padding: 16px; background: linear-gradient(135deg,#3f5545,#58705a); color: #fff8e6; border: 4px solid #71866e; border-left: 9px solid #e8ad63; border-radius: 14px; box-shadow: 0 7px 0 rgba(62,79,64,.2); }
 .activityHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .activityHead .eyebrow { color: #d8e2ce; }
@@ -37,10 +46,20 @@
 .logEmpty { padding: 18px; text-align: center; color: #6a7566; font-size: 12px; }
 .eventCloseChoice { width: 100%; margin-top: 9px; background: #f5efd9; border-color: #a49e8a; color: #566257; }
 .eventCloseChoice:hover { background: #ebe4cf; }
-.tipsCard { background: #edf1d7; border: 3px solid #8ba078; border-left: 8px solid #6f8c61; border-radius: 12px; padding: 13px 15px; margin-bottom: 14px; box-shadow: 0 4px 0 rgba(79,98,73,.15); }
+.todayInfoRow { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; align-items: stretch; margin-bottom: 14px; }
+.tipsCard { background: #edf1d7; border: 3px solid #8ba078; border-left: 8px solid #6f8c61; border-radius: 12px; padding: 13px 15px; margin: 0; box-shadow: 0 4px 0 rgba(79,98,73,.15); }
 .tipsCard b { display: block; font-size: 17px; margin-top: 3px; }
 .tipsCard p { margin: 4px 0 0; color: #65705f; font-size: 12px; line-height: 1.6; }
+.tipsCard.warning { background: #f5d8cc; border-color: #b85f4f; border-left-color: #8f382f; box-shadow: 0 4px 0 rgba(122,48,41,.22); }
+.tipsCard.warning .eyebrow,.tipsCard.warning b { color: #8b302b; }
+.tipsCard.warning p { color: #6f3833; font-weight: 800; }
+.todayStatusCard { min-width: 0; padding: 13px 15px; background: #f8f1dd; border: 3px solid #a4ad91; border-left: 8px solid #778b72; border-radius: 12px; box-shadow: 0 4px 0 rgba(79,98,73,.15); }
+.todayStatusCard > b { display: block; margin-top: 3px; color: #425743; font-size: 17px; }
+.todayStatusCard .conditionTags { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin-top: 9px; }
+.todayStatusCard .conditionTags span { min-width: 0; padding: 6px 8px; border: 1px solid #b9b9a1; border-radius: 7px; background: #e7e9d7; color: #566253; font-size: 11px; font-weight: 800; line-height: 1.35; }
 .growthLayout { grid-template-columns: 270px minmax(0,1fr); }
+.relationStory { margin: 9px 0; padding: 9px 10px; border: 2px solid #9aab8e; border-radius: 8px; background: #e8edd9; color: #566454; font-size: 11px; line-height: 1.55; }
+.relationStory b { display: block; margin-bottom: 3px; color: #466047; }
 .growthGuide { margin-top: 18px; padding: 18px; background: #f5f0dc; border: 3px solid #95a487; border-left: 8px solid #6f8c61; border-radius: 12px; box-shadow: 0 4px 0 rgba(79,98,73,.13); }
 .growthGuideHead h3 { margin: 4px 0 5px; font-size: 23px; }
 .growthGuideHead p { margin: 0; color: #65705f; font-size: 14px; line-height: 1.65; }
@@ -61,6 +80,7 @@
 .drugEffect { margin: 7px 0; padding: 8px 9px; border: 2px solid #aab49d; border-radius: 8px; background: #edf0df; color: #586454; font-size: 10px; font-weight: 800; line-height: 1.5; }
 .drugEffect.drug-mild { background: #f4e9cb; border-color: #c7a96c; color: #755e34; }
 .drugEffect.drug-strong { background: #f1d9ce; border-color: #c58d78; color: #81483c; }
+.drugEffect.drug-critical { background: #eac8c3; border-color: #a94f49; color: #762b29; }
 .drugImpact { margin: 9px 0 12px; padding: 9px 11px; background: #e9eddb; border-left: 5px solid #819477; border-radius: 7px; color: #586454; font-size: 11px; font-weight: 800; line-height: 1.5; }
 
 .itemKeyBadge { display: inline-flex; width: fit-content; margin-top: 7px; padding: 3px 7px; border: 1px solid #9c8162; border-radius: 999px; background: #eee1c7; color: #6e543b; font-size: 9px; font-weight: 900; }
@@ -81,16 +101,37 @@
 .escapeProgressSummary h3 { margin: 4px 0 0; font-size: 23px; }
 .escapeProgressSummary .progressRing { flex: 0 0 auto; width: 104px; height: 104px; margin: 0; }
 .escapeProgressCard .escapeChecklist { margin-bottom: 0; }
-.toast { position: fixed; left: 50%; top: 50%; bottom: auto; z-index: 100; width: min(680px,calc(100vw - 32px)); max-width: none; min-height: 116px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%,calc(-50% + 18px)) scale(.98); background: rgba(52,72,58,.97); color: #fff9e6; border: 3px solid #b8caa9; border-radius: 16px; padding: 20px 26px 22px; font-weight: 950; font-size: 20px; line-height: 1.55; letter-spacing: .2px; text-align: center; text-wrap: balance; box-shadow: 0 18px 48px rgba(25,35,28,.46),0 0 0 5px rgba(236,242,220,.14); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity .2s ease,transform .2s ease; }
+.toast { position: fixed; left: 50%; top: auto; bottom: 0; z-index: 100; width: min(760px,calc(100vw - 32px)); max-width: none; min-height: 108px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%,calc(100% + 18px)) scale(.98); background: rgba(52,72,58,.97); color: #fff9e6; border: 3px solid #b8caa9; border-bottom: 0; border-radius: 16px 16px 0 0; padding: 18px 26px calc(20px + env(safe-area-inset-bottom,0px)); font-weight: 950; font-size: 20px; line-height: 1.55; letter-spacing: .2px; text-align: center; text-wrap: balance; box-shadow: 0 -18px 48px rgba(25,35,28,.4),0 0 0 5px rgba(236,242,220,.14); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity .2s ease,transform .24s ease; }
 .toast::before { content: "行动结果 / 提示"; display: block; margin-bottom: 7px; color: #dce9ca; font-size: 12px; font-weight: 950; letter-spacing: 2px; }
-.toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+.toast.show { opacity: 1; transform: translate(-50%,0) scale(1); }
 .toast.evidence { background: #5c7048; border-color: #d7c56d; }
 .toast.evidence::before { content: "获得重要情报"; color: #fff0a8; }
 .toast.danger { background: #873f35; border-color: #e1a38c; }
 .toast.danger::before { content: "注意"; color: #ffd9c9; }
 .routeCard li.met { color: #416f43; font-weight: 800; }
 .routeCard li.missing { color: #8b4e42; }
+.intelBoard { display: block; }
+.intelLayer { margin-bottom: 20px; padding: 14px; border: 3px solid #a6b092; border-radius: 13px; background: rgba(248,241,221,.72); }
+.intelLayer.layer-2 { border-left: 8px solid #7b9168; }
+.intelLayer.layer-3 { border-left: 8px solid #b2864f; }
+.intelLayer.layer-4 { border-left: 8px solid #7d6d94; }
+.intelLayerHead { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+.intelLayerHead span { color: #6e7f62; font-size: 11px; font-weight: 950; letter-spacing: 1.4px; }
+.intelLayerHead h3 { margin: 3px 0 0; font-size: 21px; }
+.intelLayerHead p { max-width: 440px; margin: 0; color: #677263; font-size: 12px; line-height: 1.55; text-align: right; }
+.intelLayerGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.intelImpact { margin-top: 10px; padding: 9px 10px; border-radius: 8px; background: #e4ead5; color: #4f604d; font-size: 12px; line-height: 1.55; }
+.intelImpact b { display: block; margin-bottom: 2px; color: #526d4e; }
+.intelSchedule { display: grid; gap: 5px; margin-top: 10px; padding: 10px; border: 2px solid #9da98f; border-radius: 9px; background: #f3ecd2; font-size: 11px; line-height: 1.45; }
+.intelSchedule > b { color: #4f674d; font-size: 12px; }
+.intelSchedule > div { display: grid; grid-template-columns: minmax(82px,.8fr) 1.6fr; gap: 8px; padding-top: 5px; border-top: 1px dashed #b9b39c; }
+.intelSchedule span { color: #795e3f; font-weight: 900; }
+.intelSchedule em { color: #596557; font-style: normal; }
+.intelPrereq { display: grid; gap: 5px; margin-top: 10px; color: #77796d; font-size: 11px; }
+.intelPrereq span { display: block; padding: 4px 6px; border-radius: 6px; background: #dddccc; }
+.intelPrereq span.met { background: #dbe8ca; color: #456746; font-weight: 850; }
 .locationCard:disabled { color: inherit; }
+.locationSchedule { margin-top: 5px; color: #6c5b3e; font-size: 11px; font-weight: 850; line-height: 1.35; }
 button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
 .eventChoice:hover,.actionBtn:hover,.tab:hover,.locationCard:not(.locked):hover { filter: brightness(1.035); transform: translateY(-1px); }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
@@ -105,24 +146,29 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
 }
 @media (max-width: 760px) {
   .topbar { height: 58px; justify-content: space-between; gap: 6px; }
-  .topbar .topstat { display: none; }
+  .desktopCoreStatus { display: none; }
   .topbar .saveState { display: none; }
   .mobileGameTitle { min-width: 80px; display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-start; margin-right: auto; color: #fff8e6; font-size: 11px; font-weight: 950; line-height: 1.1; white-space: nowrap; }
   .mobileGameTitle small { margin-top: 2px; color: #becbb7; font-size: 8px; font-weight: 700; }
-  .mobileTopStatus { min-width: 0; display: flex; flex: 0 1 auto; align-items: center; justify-content: flex-end; gap: 5px; overflow: hidden; color: #fff8e6; font-size: 10px; white-space: nowrap; }
-  .mobileTopStatus span { display: inline-flex; align-items: center; gap: 2px; }
-  .mobileTopStatus .mobileTopStatusLabel { display: none; }
-  .mobileTopStatus b { color: #ffe2a9; font-size: 11px; }
+  .mobileCoreStatus { min-width: 0; display: flex; flex: 0 1 auto; align-items: center; justify-content: center; gap: 3px; overflow: hidden; color: #fff8e6; font-size: 10px; line-height: 1.2; white-space: nowrap; }
+  .mobileCoreStatus span { display: inline-flex; align-items: center; gap: 2px; padding: 4px 5px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; background: rgba(255,255,255,.08); }
+  .mobileCoreStatus b { color: #ffe2a9; font-size: 12px; }
   .topbar .iconBtn { flex: 0 0 auto; }
-  .mobileStatus { position: sticky; top: 58px; z-index: 19; display: flex; justify-content: space-around; gap: 7px; background: #e8ecd8; border-bottom: 3px solid #9eaa8d; padding: 7px 8px; font-size: 11px; }
-  .mobileStatus span { white-space: nowrap; }
   .activityDock { padding: 13px; border-left-width: 6px; }
   .activityHead { flex-direction: column; gap: 4px; }
   .activityMeta { justify-content: flex-start; }
   .activityLog { max-height: 250px; }
-  .toast { top: 50%; bottom: auto; width: calc(100vw - 24px); min-height: 108px; padding: 18px 17px 20px; border-radius: 14px; font-size: 18px; line-height: 1.55; }
+  .toast { top: auto; bottom: 0; width: 100vw; min-height: 102px; padding: 16px 17px calc(18px + env(safe-area-inset-bottom,0px)); border-right: 0; border-left: 0; border-radius: 14px 14px 0 0; font-size: 18px; line-height: 1.55; }
   .toast::before { margin-bottom: 6px; font-size: 12px; }
+  .intelLayer { padding: 11px; }
+  .intelLayerHead { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .intelLayerHead p { max-width: none; text-align: left; font-size: 13px; }
+  .intelLayerGrid { grid-template-columns: 1fr; }
+  .intelImpact,.intelPrereq,.intelSchedule { font-size: 13px; }
+  .intelSchedule > b { font-size: 14px; }
+  .intelSchedule > div { grid-template-columns: 105px 1fr; }
   .sectionHead { flex-direction: column; gap: 10px; }
+  .locationSchedule { font-size: 13px; }
   .dayGoal { max-width: none; width: 100%; }
   .modal { padding: 2vh 8px; }
   .modalCard { width: 100%; padding: 15px; }
@@ -145,17 +191,19 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
   .tab { font-size: 15px; }
   .saveState { display: none; }
   .mobileGameTitle { min-width: 72px; font-size: 10px; }
-  .mobileTopStatus { gap: 3px; font-size: 9px; }
-  .mobileTopStatus b { font-size: 10px; }
+  .mobileCoreStatus { gap: 2px; font-size: 10px; }
+  .mobileCoreStatus span { padding: 3px 4px; }
+  .mobileCoreStatus b { font-size: 11px; }
 }
 
 /* Pad: keep compact layout, but never use desktop micro-copy sizes. */
 @media (max-width: 1100px) {
+  .gameLayout { grid-template-columns: 120px minmax(0,1fr); }
   .topbar .logo small,.topstat small,.leftRail small,.rightRail p,.rightRail small,
   .locationMeta,.miniChecklist div,.profileIdentity span,.profileStatusBody p,
   .inventoryItem small,.shopItem small,.checkItem span,.eventChoice span,
   .activityMeta span,.changeChip,.itemKeyBadge,.craftRequirements,.relationGate,
-  .intelRevealBadge,.evidenceBadge,.progressRing span,.request,.request small { font-size: 12px; line-height: 1.5; }
+  .intelRevealBadge,.evidenceBadge,.progressRing span,.request,.request small,.relationStory { font-size: 12px; line-height: 1.5; }
 
   .sectionHead p,.locationBody p,.relationCard p,.intelCard p,.routeCard p,
   .routeCard li,.tipsCard p,.activityLatest,.logEmpty,.dayGoal,.overnightEvent,
@@ -168,19 +216,18 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
 /* Phone: body copy is at least 14px, secondary labels at least 12px. */
 @media (max-width: 760px) {
   html,body { font-size: 16px; }
+  .gameLayout { grid-template-columns: minmax(0,1fr); }
+  .main { grid-column: 1; width: 100%; min-width: 0; }
   .topbar { height: 64px; }
-  .mobileStatus { top: 64px; padding-block: 9px; font-size: 13px; line-height: 1.35; }
   .mobileGameTitle { min-width: 94px; font-size: 13px; line-height: 1.2; }
   .mobileGameTitle small { margin-top: 3px; font-size: 12px; line-height: 1.2; }
-  .mobileTopStatus { gap: 5px; font-size: 12px; line-height: 1.2; }
-  .mobileTopStatus b { font-size: 13px; }
 
   .eyebrow,.activityMeta span,.changeChip,.itemKeyBadge,.intelRevealBadge,
   .evidenceBadge { font-size: 12px; line-height: 1.45; }
 
   .sectionHead p,.locationBody p,.relationCard p,.intelCard p,.routeCard p,
   .routeCard li,.tipsCard p,.profileStatusBody p,.drugEffect,.drugImpact,
-  .craftRequirements,.relationGate,.intelRevealCard p,.modalCard>p,
+  .craftRequirements,.relationGate,.relationStory,.intelRevealCard p,.modalCard>p,
   .overnightEvent { font-size: 14px; line-height: 1.7; }
 
   .locationMeta,.profileIdentity span,.inventoryItem small,.shopItem small,
@@ -188,7 +235,11 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
   .activityLatest,.logEmpty,.dayGoal,.leftRail small,.request small { font-size: 13px; line-height: 1.6; }
 
   .logMessage { font-size: 15px; line-height: 1.65; }
-  .tipsCard b,.locationTitle { font-size: 18px; }
+  .tipsCard b,.todayStatusCard>b,.locationTitle { font-size: 18px; }
+  .todayInfoRow { gap: 8px; }
+  .tipsCard,.todayStatusCard { padding: 11px; border-left-width: 5px; }
+  .todayStatusCard .conditionTags { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+  .todayStatusCard .conditionTags span { min-height: 42px; display: grid; place-items: center; padding: 5px 3px; font-size: 11px; text-align: center; white-space: normal; word-break: keep-all; }
   .actionBtn,.routeBtn,.eventChoice,.secondary,.primary { min-height: 46px; font-size: 14px; line-height: 1.45; }
   .eventChoice { padding: 13px; }
   .statusRow { padding-block: 11px; }
@@ -197,6 +248,10 @@ button:focus-visible { outline: 4px solid #d4a93f; outline-offset: 3px; }
 }
 @media (max-width: 430px) {
   .bagOnly .inventoryGrid,.shopModalCard .shopGrid { grid-template-columns: 1fr; }
+  .todayInfoRow { gap: 6px; }
+  .tipsCard,.todayStatusCard { padding: 9px; }
+  .tipsCard p { font-size: 13px; line-height: 1.55; }
+  .todayStatusCard .conditionTags span { font-size: 11px; }
 }
 @media (max-width: 760px) {
   .growthGuide { padding: 15px 13px; }

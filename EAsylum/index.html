@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>逃出疯人院 · 可玩 Demo v1.19</title>
+<title>逃出疯人院 · 可玩 Demo v1.27</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="style.css?v=1.19">
-<link rel="stylesheet" href="enhancements.css?v=1.19">
+<link rel="stylesheet" href="style.css?v=1.27">
+<link rel="stylesheet" href="enhancements.css?v=1.27">
 </head>
 <body>
 <div id="app">
@@ -18,9 +18,9 @@
         <img src="assets/hospital.webp" alt="">
         <div class="titleShade"></div>
         <div class="titleCopy">
-          <div class="eyebrow">PLAYABLE DEMO · v1.19</div>
+          <div class="eyebrow">PLAYABLE DEMO · v1.27</div>
           <h1>逃出疯人院</h1>
-          <p>你被以错误身份送入疗养院。14天后，你将被转往高戒备病区。<br>经营每一天，成长、工作、交朋友、收集证据，并找到真正离开的办法。</p>
+          <p>你被以错误身份送入疗养院，院方没有主动复核的打算。<br>按自己的节奏生活、成长、交朋友、收集证据，并在准备充分时找到真正离开的办法。</p>
           <div class="titleButtons">
             <button id="newGameBtn" class="primary big">开始新游戏</button>
             <button id="continueBtn" class="secondary big hidden">继续游戏</button>
@@ -28,10 +28,10 @@
         </div>
       </div>
       <div class="pillars">
-        <div><b>日程经营</b><span>药物状态决定每天 3–5 次行动</span></div>
+        <div><b>一周循环</b><span>周一至周日，区域与行动按周轮换</span></div>
         <div><b>自我养成</b><span>体能 / 工作 / 社交 / 观察</span></div>
         <div><b>关系网络</b><span>帮助病友，获得人情与机会</span></div>
-        <div><b>最终目标</b><span>准备证据与出口，成功离院</span></div>
+        <div><b>自主节奏</b><span>不设天数限制，准备充分后再离院</span></div>
       </div>
     </div>
   </section>
@@ -43,11 +43,11 @@
       <div class="storyBody">
         <p>你醒来时，腕带上写着一个陌生的名字。护士告诉你：“这是你的第七码住院记录。”</p>
         <p>你坚持自己叫 <b>林默</b>，只是几天前突然被人带走。可病历写着：患者存在“持续身份妄想”。</p>
-        <p>更糟的是，你听见工作人员谈论：<b>14 天后，你会被转往高戒备病区。</b></p>
+        <p>更糟的是，院方把你的异议也写成了“症状”，并没有主动重新核对身份的打算。</p>
         <p>你现在做什么都可能被解释成“症状”。想离开这里，不能只靠喊“我没病”。你需要先把自己的生活经营起来。</p>
       </div>
       <div class="introChecklist">
-        <span>① 适应院内日程</span><span>② 提升能力</span><span>③ 建立关系</span><span>④ 准备证据或替代路线</span><span>⑤ 联系院外</span><span>⑥ 离开</span>
+        <span>① 观察每周排班</span><span>② 提升能力</span><span>③ 建立关系</span><span>④ 准备证据或替代路线</span><span>⑤ 联系院外</span><span>⑥ 在正确日期离开</span>
       </div>
       <button id="enterBtn" class="primary big">进入病区</button>
     </div>
@@ -56,40 +56,30 @@
   <section id="gameScreen" class="screen">
     <header class="topbar">
       <div class="logo">逃出疯人院 <small>DEMO</small></div>
-      <div class="topstat"><small>第</small><b id="day">1</b><small>天</small></div>
-      <div class="topstat"><small>时段</small><b id="period">上午</b></div>
-      <div class="topstat energy"><small>体力</small><b id="energy">100</b><div class="tinybar"><i id="energyBar"></i></div></div>
-      <div class="topstat"><small>院方信任</small><b id="trust">45</b></div>
-      <div class="topstat"><small>怀疑</small><b id="suspicion">15</b></div>
-      <div class="topstat"><small>积分</small><b id="tokens">0</b></div>
+      <div class="desktopCoreStatus" aria-label="核心日程信息">
+        <div class="topstat"><small>第</small><b id="day">1</b><small>天</small></div>
+        <div class="topstat weekdayStat"><small>星期</small><b id="weekday">周一</b></div>
+        <div class="topstat tokenStat"><small>积分</small><b id="tokens">8</b></div>
+      </div>
       <span id="saveState" class="saveState" aria-live="polite">已自动保存</span>
       <div class="mobileGameTitle">逃离疯人院 <small>by Mootii</small></div>
-      <div class="mobileTopStatus" aria-label="今日状态">
-        <span class="mobileTopStatusLabel">今日状态</span>
-        <span title="体力">⚡<b id="mobileTopEnergy">100</b></span>
-        <span title="药物负荷">💊<b id="mobileTopDrug">0</b></span>
-        <span title="院方信任">🙂<b id="mobileTopTrust">45</b></span>
-        <span title="院方怀疑">👁<b id="mobileTopSuspicion">15</b></span>
+      <div class="mobileCoreStatus" aria-label="核心日程信息">
+        <span>第 <b id="mobileDay">1</b> 天</span>
+        <span><b id="mobileWeekday">周一</b></span>
+        <span>⭐ <b id="mobileTokens">8</b></span>
       </div>
       <button id="saveBtn" class="iconBtn" title="保存游戏" aria-label="保存游戏">💾</button>
     </header>
 
-    <div class="mobileStatus" aria-label="当前日程">
-      <span>第 <b id="mobileDay">1</b> 天</span>
-      <span id="mobilePeriod">上午</span>
-      <span>行动 <b id="mobileActions">5</b>/<b id="mobileMaxActions">5</b></span>
-      <span>距转院 <b id="mobileDaysLeft">14</b> 天</span>
-    </div>
-
     <div class="gameLayout">
       <aside class="leftRail">
         <nav class="tabs">
-          <button class="tab active" data-panel="lifePanel">☀️<span>今天</span></button>
-          <button class="tab" data-panel="growthPanel">🌱<span>养成</span></button>
-          <button class="tab" data-panel="relationsPanel">🤝<span>关系</span></button>
-          <button class="tab" data-panel="intelPanel">📌<span>情报</span></button>
-          <button class="tab" data-panel="bagPanel">🎒<span>物品</span></button>
-          <button class="tab" data-panel="escapePanel">🚪<span>离院</span></button>
+          <button class="tab active" data-panel="lifePanel" data-unlock-day="1">☀️<span>今天</span></button>
+          <button class="tab" data-panel="growthPanel" data-unlock-day="1">🌱<span>养成</span></button>
+          <button class="tab" data-panel="relationsPanel" data-unlock-day="2">🤝<span>关系</span></button>
+          <button class="tab" data-panel="intelPanel" data-unlock-day="3">📌<span>情报</span></button>
+          <button class="tab" data-panel="bagPanel" data-unlock-day="2">🎒<span>物品</span></button>
+          <button class="tab" data-panel="escapePanel" data-unlock-day="5">🚪<span>离院</span></button>
         </nav>
         <div class="railBox">
           <div class="railTitle">今日剩余行动</div>
@@ -97,9 +87,9 @@
           <button id="endDayBtn" class="secondary full">提前结束今天</button>
         </div>
         <div class="railBox">
-          <div class="railTitle">转院倒计时</div>
-          <div class="countdown"><b id="daysLeft">13</b><span>天</span></div>
-          <small>第 15 天上午将被转往高戒备区。</small>
+          <div class="railTitle">离院计划</div>
+          <div class="countdown"><b>∞</b><span>不限天数</span></div>
+          <small>没有强制结束日期。准备充分后，再选择适合自己的离院方案。</small>
         </div>
       </aside>
 
@@ -126,13 +116,20 @@
           </div>
           <div id="morningEvent" class="morningEvent hidden"></div>
           <div id="dayActionContent" class="dayActionContent hidden" aria-hidden="true">
-            <div id="tipsCard" class="tipsCard">
-              <div>
-                <div class="eyebrow">每日玩法 TIPS · 只提供信息</div>
-                <b id="tipTitle">行动与体力</b>
-                <p id="tipText">所有院内活动都需要行动点；药物状态决定每天可用的行动次数。</p>
+            <div class="todayInfoRow">
+              <div id="tipsCard" class="tipsCard">
+                <div>
+                  <div class="eyebrow">每日玩法 TIPS · 只提供信息</div>
+                  <b id="tipTitle">行动与体力</b>
+                  <p id="tipText">所有院内活动都需要行动点；药物状态决定每天可用的行动次数。</p>
+                </div>
               </div>
-            </div>
+              <section class="todayStatusCard" aria-labelledby="todayStatusTitle">
+                <div class="eyebrow">实时数值</div>
+                <b id="todayStatusTitle">今日状态</b>
+                <div id="conditionTags" class="conditionTags"></div>
+              </section>
+              </div>
             <div id="locationGrid" class="locationGrid"></div>
           </div>
         </section>
@@ -152,7 +149,7 @@
                 <div id="drugEffect" class="drugEffect" aria-live="polite"></div>
                 <div class="statusRow"><span>🙂 院方信任</span><b id="gTrust"></b></div>
                 <div class="statusRow"><span>👁 院方怀疑</span><b id="gSuspicion"></b></div>
-                <p>正常过夜使药物负荷降低 10，病房休息降低 6；怀疑达到 60 会触发小黑屋，信任则决定设施开放范围。</p>
+                <p>正常过夜使药物负荷降低 10，病房休息降低 6；花园锻炼与规律工疗也能小幅降低。怀疑达到 60 会触发小黑屋。</p>
               </div>
             </div>
             <div id="skillCards" class="skillCards"></div>
@@ -165,13 +162,13 @@
             </div>
             <div class="growthGuideGrid">
               <article class="growthGuideItem"><span class="growthGuideIcon">⚡</span><div><b>体力</b><p>行动需要足够体力。病房休息、点心和正常过夜可以恢复；体力不足时无法执行对应行动。</p></div></article>
-              <article class="growthGuideItem"><span class="growthGuideIcon">💊</span><div><b>药物负荷</b><p>低于 25 时每天 5 次行动；25–49 时 4 次、每次额外消耗 3 体力且成长为 80%；达到 50 时为 3 次、额外消耗 6 体力且成长为 60%。</p></div></article>
-              <article class="growthGuideItem"><span class="growthGuideIcon">🙂</span><div><b>院方信任</b><p>信任低于 45、30、20 会逐级封锁设施；方案 A 还要求信任达到 78。稳定活动可以改善评价。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">💊</span><div><b>药物负荷</b><p>低于 25 时每天 5 次行动；25–49 时为 4 次、成长 85%；50–64 时为 3 次、成长 70%；65–79 仍为 3 次、成长降至 55%；80–89 时为 2 次、成长 40%；达到 90 后仅 1 次、成长 25%。</p></div></article>
+              <article class="growthGuideItem"><span class="growthGuideIcon">🙂</span><div><b>院方信任</b><p>信任低于 45、30、20 会逐级封锁设施；中后期的方案 A 还要求信任达到 80。稳定活动可以改善评价。</p></div></article>
               <article class="growthGuideItem"><span class="growthGuideIcon">👁</span><div><b>院方怀疑</b><p>危险调查和避药会增加怀疑。达到 60 会立即中断行动、取消剩余行动并触发小黑屋处分。</p></div></article>
-              <article class="growthGuideItem"><span class="growthGuideIcon">🏃</span><div><b>体能</b><p>提高高消耗行动的准备程度，是维修通道方案 B 的核心能力之一，需要达到 Lv.3。</p></div></article>
-              <article class="growthGuideItem"><span class="growthGuideIcon">🛠️</span><div><b>工作</b><p>提升工疗收益和材料产量，并帮助开放洗衣房等后勤区域，为物品与路线准备资源。</p></div></article>
-              <article class="growthGuideItem"><span class="growthGuideIcon">💬</span><div><b>社交</b><p>推动人物关系、院外联络和复核申请；方案 A 需要 Lv.3，隐藏方案 C 需要 Lv.4。</p></div></article>
-              <article class="growthGuideItem"><span class="growthGuideIcon">🔎</span><div><b>观察</b><p>发现编号、排班和档案矛盾，开放关键调查方式；维修通道方案 B 需要达到 Lv.3。</p></div></article>
+              <article class="growthGuideItem" data-reveal-day="1"><span class="growthGuideIcon">🏃</span><div><b>体能</b><p>代表身体训练水平。提高后能够为高消耗工作和需要身体能力的离院方式做准备。</p></div></article>
+              <article class="growthGuideItem" data-reveal-day="1"><span class="growthGuideIcon">🛠️</span><div><b>工作</b><p>提升工疗收益和材料产量，并帮助开放洗衣房等后勤区域，为物品与路线准备资源。</p></div></article>
+              <article class="growthGuideItem" data-reveal-day="2"><span class="growthGuideIcon">💬</span><div><b>社交</b><p>推动人物关系、院外联络和正式申请。等级越高，越容易把不同人物的帮助组合起来。</p></div></article>
+              <article class="growthGuideItem" data-reveal-day="3"><span class="growthGuideIcon">🔎</span><div><b>观察</b><p>发现编号、排班和档案中的矛盾，逐步开放关键调查方式与环境线索。</p></div></article>
             </div>
           </section>
         </section>
@@ -182,7 +179,7 @@
         </section>
 
         <section id="intelPanel" class="contentPanel">
-          <div class="sectionHead"><div><div class="eyebrow">调查板</div><h2>把零散事实拼成能带走的证据</h2><p>传闻只是方向；真正的关键证据会改变离院条件。</p></div></div>
+          <div class="sectionHead"><div><div class="eyebrow">四层调查板</div><h2>让每一条线索推动下一层内容</h2><p>基础发现 → 交叉印证 → 深层证据 → 路线突破。集齐指定组合后，对应地点会开放新的调查与谜题。</p></div></div>
           <div id="intelBoard" class="intelBoard"></div>
         </section>
 
@@ -192,7 +189,7 @@
         </section>
 
         <section id="escapePanel" class="contentPanel">
-          <div class="sectionHead"><div><div class="eyebrow">长期目标</div><h2>真正“逃出去”</h2><p>方案 A 依赖完整证据，方案 B 可以直接从维修通道离开；满足隐藏条件后，还会出现方案 C。</p></div></div>
+          <div class="sectionHead"><div><div class="eyebrow">长期目标</div><h2>真正“逃出去”</h2><p>方案 A 需要完整证据链和稳定评价；方案 B 需要破解维修路线；多条深层线索还可能开启方案 C。</p></div></div>
           <div class="escapeProgressCard">
             <div class="escapeProgressSummary">
               <div><div class="eyebrow">当前进度</div><h3>离院准备</h3></div>
@@ -204,16 +201,6 @@
         </section>
       </main>
 
-      <aside class="rightRail">
-        <div class="rightBox">
-          <div class="railTitle">今日状态</div>
-          <div id="conditionTags" class="conditionTags"></div>
-        </div>
-        <div class="rightBox">
-          <div class="railTitle">提示</div>
-          <p id="contextTip">不是所有事情都要今天做完。先让自己拥有稳定的生活节奏。</p>
-        </div>
-      </aside>
     </div>
   </section>
 
@@ -287,16 +274,8 @@
     </div>
   </section>
 
-  <section id="failScreen" class="screen">
-    <div class="storyCard">
-      <div class="eyebrow">DEMO END</div>
-      <h2 id="failTitle">转院通知</h2>
-      <p id="failText">你没能在规定时间内做好准备。</p>
-      <button id="failRestart" class="primary big">重新开始</button>
-    </div>
-  </section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-<script src="game.js?v=1.19"></script>
+<script src="game.js?v=1.27"></script>
 </body>
 </html>
