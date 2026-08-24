@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#263b30">
+  <title>逃出疯人院 · 场景探索 Demo v2.0</title>
+  <link rel="stylesheet" href="style.css?v=2.0.0">
+</head>
+<body>
+  <section id="titleScreen" class="titleScreen">
+    <div class="titleShade"></div>
+    <div class="titleContent">
+      <div class="eyebrow light">ORIGINAL TOP-DOWN STORY DEMO · v2.0</div>
+      <h1>逃出疯人院</h1>
+      <p>从床边醒来，亲自走过病房、走廊、花园和小卖部。<br>观察环境、认识院友，把每一天经营成离院的机会。</p>
+      <div class="titleActions">
+        <button id="newGameBtn" class="primary big">开始新游戏</button>
+        <button id="continueBtn" class="secondary big hidden">继续游戏</button>
+      </div>
+      <div class="titleFeatures"><span>角色移动</span><span>场景碰撞</span><span>人物互动</span><span>手机控制</span></div>
+    </div>
+  </section>
+
+  <main id="gameScreen" class="gameShell hidden">
+    <header class="topbar">
+      <div class="brand"><b>逃出疯人院</b><small>by Mootii · 场景探索 v2.0</small></div>
+      <div class="dayCore" aria-label="核心日程信息">
+        <span>第 <b id="day">1</b> 天</span><span id="weekday">周一</span><span>积分 <b id="tokens">8</b></span>
+      </div>
+      <button id="saveBtn" class="iconBtn" aria-label="保存游戏">保存</button>
+    </header>
+
+    <section class="playLayout">
+      <div class="worldPanel">
+        <div class="sceneHeader">
+          <div><small>当前位置</small><b id="sceneName">东区 2 号病房</b></div>
+          <span class="desktopHelp">WASD / 方向键移动 · E / 空格互动</span>
+        </div>
+        <div class="canvasWrap">
+          <canvas id="gameCanvas" width="800" height="480" tabindex="0" aria-label="俯视角游戏场景"></canvas>
+          <div id="locationBanner" class="locationBanner">东区 2 号病房</div>
+          <div id="interactPrompt" class="interactPrompt hidden"><kbd>E</kbd><span id="promptText">互动</span></div>
+          <div id="toast" class="toast" role="status" aria-live="polite"></div>
+        </div>
+        <div class="touchControls" aria-label="触屏控制">
+          <div class="dpad">
+            <button data-dir="up" aria-label="向上">▲</button>
+            <button data-dir="left" aria-label="向左">◀</button>
+            <button data-dir="down" aria-label="向下">▼</button>
+            <button data-dir="right" aria-label="向右">▶</button>
+          </div>
+          <button id="touchInteract" class="interactBtn">互动</button>
+        </div>
+        <div class="worldToolbar">
+          <button id="journalBtn" class="toolBtn">角色与背包</button>
+          <button id="helpBtn" class="toolBtn">操作说明</button>
+          <button id="endDayBtn" class="toolBtn danger">提前结束今天</button>
+        </div>
+      </div>
+
+      <aside class="hudPanel">
+        <section class="statusCard" aria-label="今日状态">
+          <div><small>行动</small><b id="actions">5 / 5</b></div>
+          <div><small>体力</small><b id="energy">100</b></div>
+          <div><small>药物</small><b id="drug">0</b></div>
+          <div><small>清醒状态</small><b id="drugState">清醒</b></div>
+          <div><small>信任</small><b id="trust">52</b></div>
+          <div><small>怀疑</small><b id="suspicion">8</b></div>
+        </section>
+        <section class="questCard">
+          <div class="eyebrow">当前目标 · 只显示信息</div>
+          <b id="questTitle">完成晨间治疗</b>
+          <p id="questText">护士林正在床边等你。完成治疗后才可以自由行动。</p>
+        </section>
+        <section id="warningCard" class="warningCard hidden">
+          <b>隔离警告</b><p id="warningText"></p>
+        </section>
+        <section class="logCard">
+          <div class="logHead"><div><div class="eyebrow">TODAY · 实时反馈</div><b>今天发生了什么</b></div><small>最旧 → 最新</small></div>
+          <div id="log" class="activityLog" aria-live="polite"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <section id="introModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="modalCard storyModal">
+      <div class="modalArt introArt"></div>
+      <div class="eyebrow">序章 · 第 1 天</div>
+      <h2 id="introTitle">你的名字不在病历上。</h2>
+      <p>你醒来时，腕带上写着一个陌生的名字。你坚持自己叫 <b>林默</b>，病历却把这句话记录为“持续身份妄想”。</p>
+      <p>想离开这里，不能只靠争辩。先熟悉病区，记住每个人与每扇门的位置，再让线索互相证明。</p>
+      <button id="enterWardBtn" class="primary big full">在病房醒来</button>
+    </div>
+  </section>
+
+  <section id="morningModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="morningTitle">
+    <div class="modalCard">
+      <div class="eyebrow">每天开始前</div><h2 id="morningTitle">晨间治疗</h2>
+      <p>你的选择会影响院方评价、怀疑和药物负荷。完成治疗前不能自由行动。</p>
+      <div id="currentDrugInfo" class="infoStrip"></div>
+      <div id="morningChoices" class="choiceList"></div>
+    </div>
+  </section>
+
+  <section id="eventModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="eventTitle">
+    <div class="modalCard eventCard">
+      <div id="eventArt" class="modalArt"></div>
+      <div id="eventEyebrow" class="eyebrow">场景互动</div><h2 id="eventTitle"></h2><p id="eventText"></p>
+      <div id="eventChoices" class="choiceList"></div>
+      <button id="closeEventBtn" class="choice closeChoice"><b>关闭窗口</b><span>返回场景，不执行行动</span></button>
+    </div>
+  </section>
+
+  <section id="shopModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+    <div class="modalCard shopCard">
+      <div class="eyebrow">院内小卖部</div><h2 id="shopTitle">今天想买点什么？</h2>
+      <p id="shopRule">每次进入后的第一次成功购买消耗 1 次行动，之后继续购买不消耗行动。</p>
+      <div class="shopBalance">当前积分：<b id="shopTokens">8</b></div>
+      <div id="shopGrid" class="shopGrid"></div>
+      <button id="closeShopBtn" class="choice closeChoice"><b>离开小卖部</b><span>返回场景</span></button>
+    </div>
+  </section>
+
+  <section id="journalModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="journalTitle">
+    <div class="modalCard journalCard">
+      <div class="eyebrow">随身记录</div><h2 id="journalTitle">林默的状态、关系与物品</h2>
+      <div id="journalContent"></div>
+      <button id="closeJournalBtn" class="choice closeChoice"><b>关闭记录</b><span>返回当前场景</span></button>
+    </div>
+  </section>
+
+  <section id="dayEndModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="dayEndTitle">
+    <div class="modalCard compact">
+      <div class="eyebrow">DAY COMPLETE</div><h2 id="dayEndTitle">第 1 天结束</h2>
+      <p id="dayEndText"></p><div id="dayEndStats" class="dayEndStats"></div>
+      <button id="nextDayBtn" class="primary big full">开始下一天</button>
+    </div>
+  </section>
+
+  <section id="confinementModal" class="modal topModal hidden" role="dialog" aria-modal="true" aria-labelledby="confinementTitle">
+    <div class="modalCard compact confinementCard">
+      <div class="modalArt confinementArt"></div><div class="eyebrow">纪律处分</div>
+      <h2 id="confinementTitle">你被关进了小黑屋</h2><p id="confinementText"></p>
+      <button id="finishConfinementBtn" class="primary big full">熬过这一天</button>
+    </div>
+  </section>
+
+  <script src="game.js?v=2.0.0"></script>
+</body>
+</html>
