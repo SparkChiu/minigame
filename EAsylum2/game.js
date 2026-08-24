@@ -194,7 +194,7 @@ function interactionById(id){
     wristband:()=>S.intel.wristband?simpleEvent("陌生腕带","编号 E2-071 与病历页码不一致。你已经把它记进随身记录。"):openEvent("床头柜上的腕带","塑料腕带写着一个陌生名字，编号 E2-071。病历夹上的页码却从 318 开始。",[
       {title:"逐项记下姓名和编号",sub:"1 行动 · 体力 -5 · 观察成长 +35 · 获得线索",run:()=>spendAction(5,"你记下腕带与病历页码的矛盾：这不是一句“我不是他”，而是一组可以复查的编号。",()=>{S.intel.wristband=true;gainSkill("observe",35)})}
     ],"第一条线索"),
-    wardDoor:()=>changeScene("corridor",145,92),corridorWard:()=>changeScene("ward",400,105),corridorGarden:()=>changeScene("garden",145,405),gardenGate:()=>changeScene("corridor",650,240),corridorShop:()=>changeScene("shop",145,398),shopDoor:()=>changeScene("corridor",145,380),
+    wardDoor:()=>changeScene("corridor",145,92),corridorWard:()=>changeScene("ward",450,105),corridorGarden:()=>changeScene("garden",145,405),gardenGate:()=>changeScene("corridor",735,240),corridorShop:()=>changeScene("shop",145,398),shopDoor:()=>changeScene("corridor",145,380),
     nurse:()=>openEvent("护士林","她大部分时候只是按制度工作。你表现稳定时，她愿意把你的话写进正式记录。",[
       {title:"问她今天的安排",sub:"1 行动 · 体力 -8 · 护士关系 +8 · 社交成长",run:()=>spendAction(8,"护士林告诉你，病区活动会按星期轮换。她也把这次平静交谈写进记录。",()=>{S.flags.talkedNurse=true;S.relations.nurse=clamp(S.relations.nurse+8,0,100);S.trust+=3;gainSkill("social",25)})}
     ],"人物互动"),
@@ -244,11 +244,20 @@ function triggerConfinement(){
 function finishConfinement(){S.flags.confinement=false;$("confinementModal").classList.add("hidden");S.day++;S.morningDone=false;S.energy=clamp(S.energy+30,0,100);S.maxActions=drugEffect().actions;S.actions=S.maxActions;S.scene="ward";player.x=400;player.y=310;S.logs.push({day:S.day,message:`隔离结束。第 ${S.day} 天（${weekday()}）开始。`,changes:[]});renderUI();save(false);changeScene("ward",400,310,false);morningTreatment()}
 
 function currentScene(){return S?.scene||"ward"}
-function changeScene(scene,x,y,banner=true){S.scene=scene;player.x=x;player.y=y;renderUI();save(false);if(banner)showLocation();canvas.focus()}
+function positionBlocked(scene,x,y){return maps[scene].walls.some(w=>overlaps(rectForPlayer(x,y),w))}
+function safePosition(scene,x,y){
+  const px=clamp(x,40,W-40),py=clamp(y,40,H-40);if(!positionBlocked(scene,px,py))return{x:px,y:py};
+  for(let radius=12;radius<=168;radius+=12){
+    const candidates=[];for(let offset=-radius;offset<=radius;offset+=12){candidates.push([px+offset,py-radius],[px+offset,py+radius],[px-radius,py+offset],[px+radius,py+offset])}
+    for(const [cx,cy] of candidates){const sx=clamp(cx,40,W-40),sy=clamp(cy,40,H-40);if(!positionBlocked(scene,sx,sy))return{x:sx,y:sy}}
+  }
+  return scene==="ward"?{x:400,y:310}:{x:145,y:92}
+}
+function changeScene(scene,x,y,banner=true){S.scene=scene;const spawn=safePosition(scene,x,y);player.x=spawn.x;player.y=spawn.y;renderUI();save(false);if(banner)showLocation();canvas.focus()}
 function showLocation(){const b=$("locationBanner");b.textContent=maps[currentScene()].name;b.classList.add("show");clearTimeout(locationTimer);locationTimer=setTimeout(()=>b.classList.remove("show"),1500)}
 function rectForPlayer(x=player.x,y=player.y){return{x:x-player.w/2,y:y-player.h/2,w:player.w,h:player.h}}
 function overlaps(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
-function canMove(x,y){return !maps[currentScene()].walls.some(w=>overlaps(rectForPlayer(x,y),w))}
+function canMove(x,y){return !positionBlocked(currentScene(),x,y)}
 function nearestInteraction(){let best=null,bestD=58;for(const i of maps[currentScene()].interactions){const d=Math.hypot(player.x-i.x,player.y-i.y);if(d<bestD){best=i;bestD=d}}return best}
 function canControl(){return !$("gameScreen").classList.contains("hidden")&&["introModal","morningModal","eventModal","shopModal","journalModal","dayEndModal","confinementModal"].every(id=>$(id).classList.contains("hidden"))}
 function interact(){if(!canControl())return;const item=nearestInteraction();if(!item){showToast("附近没有可以互动的目标。");return}interactionById(item.id)}
@@ -285,7 +294,7 @@ function update(now){
 }
 
 function startGame(){
-  $("titleScreen").classList.add("hidden");$("gameScreen").classList.remove("hidden");player.x=clamp(S.player?.x||400,40,W-40);player.y=clamp(S.player?.y||310,40,H-40);renderUI();showLocation();canvas.focus();if(S.flags.confinement){$("confinementModal").classList.remove("hidden")}else if(!S.morningDone)setTimeout(morningTreatment,180)
+  $("titleScreen").classList.add("hidden");$("gameScreen").classList.remove("hidden");const spawn=safePosition(currentScene(),S.player?.x||400,S.player?.y||310);player.x=spawn.x;player.y=spawn.y;renderUI();showLocation();canvas.focus();if(S.flags.confinement){$("confinementModal").classList.remove("hidden")}else if(!S.morningDone)setTimeout(morningTreatment,180)
 }
 function newGame(){if(localStorage.getItem(SAVE_KEY)&&!confirm("开始新游戏会覆盖当前存档，确定继续吗？"))return;S=defaultState();localStorage.removeItem(SAVE_KEY);$("titleScreen").classList.add("hidden");$("introModal").classList.remove("hidden")}
 function continueGame(){if(load())startGame()}
