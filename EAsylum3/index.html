@@ -4,27 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171a18">
-  <title>逃出疯人院 · 管理叙事 Demo v3.0</title>
-  <link rel="stylesheet" href="style.css?v=3.0.0">
+  <title>逃出疯人院 · 最终版 v3.0</title>
+  <link rel="stylesheet" href="style.css?v=3.0-final-2">
 </head>
 <body>
   <section class="titleScreen" id="titleScreen">
     <div class="titleBackdrop ward"></div>
     <div class="titleContent">
-      <div class="eyebrow">ORIGINAL NARRATIVE MANAGEMENT DEMO · v3.0</div>
+      <div class="eyebrow">FULL NARRATIVE MANAGEMENT EDITION · v3.0</div>
       <h1>逃出疯人院</h1>
       <p>观察制度，经营关系，拼合证据。真正的行动，是决定把今天的时间用在哪里。</p>
       <div class="titleActions"><button class="primary" id="newGameBtn">开始新游戏</button><button id="continueBtn">继续游戏</button></div>
-      <small>原创横向场景与点击管理玩法 · 不设逃离天数上限</small>
+      <small>v1.27 完整内容 · v3.0 场景点击与时间管理交互 · 不设逃离期限</small>
     </div>
   </section>
+
   <main class="gameShell">
     <header class="topbar">
-      <div class="brand"><span class="brandMark">E2</span><div><b>逃出疯人院</b><small>by Mootii · 管理叙事版</small></div></div>
+      <div class="brand"><span class="brandMark">E2</span><div><b>逃出疯人院</b><small>by Mootii · 最终版 v3.0</small></div></div>
       <div class="clock"><span>第 <b id="day">1</b> 天</span><span id="weekday">周一</span><strong id="time">08:00</strong></div>
       <div class="resources">
-        <div><i class="energyIcon">♥</i><span><small>体力</small><b id="energy">92</b></span></div>
-        <div><i class="clarityIcon">◆</i><span><small>清醒</small><b id="clarity">84</b></span></div>
+        <div><i class="energyIcon">♥</i><span><small>体力</small><b id="energy">100</b></span></div>
+        <div><i class="clarityIcon">◆</i><span><small>清醒</small><b id="clarity">100</b></span></div>
+        <div><i class="actionIcon">▮</i><span><small>行动</small><b id="actions">5/5</b></span></div>
         <div><i class="tokenIcon">●</i><span><small>积分</small><b id="tokens">8</b></span></div>
       </div>
       <button class="iconButton" id="saveBtn" aria-label="保存游戏">保存</button>
@@ -33,53 +35,66 @@
     <section class="mainGrid">
       <nav class="sceneNav" aria-label="院内区域">
         <button class="sceneTab active" data-scene="ward"><span>▣</span><b>病房</b><small>东区 2 号</small></button>
-        <button class="sceneTab" data-scene="garden"><span>♧</span><b>花园</b><small>康复活动</small></button>
-        <button class="sceneTab" data-scene="workshop"><span>⚒</span><b>工疗室</b><small>周二开放</small></button>
-        <button class="sceneTab" data-scene="station"><span>✚</span><b>护士站</b><small>行政走廊</small></button>
-        <button class="sceneTab utility" id="shopBtn"><span>▤</span><b>小卖部</b><small>物品补给</small></button>
-        <button class="sceneTab utility second" id="journalBtn"><span>☰</span><b>调查记录</b><small>线索与物品</small></button>
+        <button class="sceneTab" data-scene="garden"><span>♧</span><b>花园</b><small>每日开放</small></button>
+        <button class="sceneTab" data-scene="workshop"><span>⚒</span><b>工疗室</b><small>每日开放</small></button>
+        <button class="sceneTab" data-scene="library"><span>▥</span><b>图书室</b><small>查看排班</small></button>
+        <button class="sceneTab" data-scene="cafeteria"><span>◉</span><b>食堂</b><small>每日开放</small></button>
+        <button class="sceneTab" data-scene="laundry"><span>▧</span><b>洗衣房</b><small>周一三五</small></button>
+        <button class="sceneTab" data-scene="station"><span>✚</span><b>护士站</b><small>周二四六</small></button>
+        <button class="sceneTab" data-scene="archives"><span>▤</span><b>档案区</b><small>周三、周五</small></button>
+        <button class="sceneTab" data-scene="visitor"><span>☎</span><b>访客区</b><small>周二四日</small></button>
+        <button class="sceneTab" data-scene="maintenance"><span>♨</span><b>维修间</b><small>周二、周六</small></button>
+        <button class="sceneTab utility" id="shopBtn"><span>●</span><b>小卖部</b><small>免费进入</small></button>
+        <button class="sceneTab utility second" id="journalBtn"><span>☰</span><b>随身记录</b><small>调查与养成</small></button>
       </nav>
 
       <section class="stagePanel">
         <div class="sceneHeader"><div><small>当前位置</small><h1 id="sceneTitle">东区 2 号病房</h1></div><p id="sceneHint">点击闪烁标记，安排接下来的行动。</p></div>
         <div class="scene ward" id="scene" aria-label="可互动场景">
           <div class="sceneShade"></div>
-          <button class="hotspot bed" data-action="rest"><span>休息</span></button>
-          <button class="hotspot locker" data-action="locker"><span>储物柜</span></button>
-          <button class="hotspot table" data-action="wristband"><span>陌生腕带</span></button>
-          <div class="actor" id="actor"><span class="head"></span><span class="body"></span></div>
+          <div class="actor" id="actor" aria-hidden="true"><span class="head"></span><span class="body"></span></div>
           <div class="sceneCaption"><b id="captionTitle">晨间治疗尚未完成</b><span id="captionText">护士林正在门口等你。治疗结束后，才可以安排今天的行动。</span></div>
         </div>
-        <div class="timeline"><span>08:00</span><div class="timelineTrack"><i id="timeProgress"></i></div><span>22:00</span><b id="remaining">今日剩余 14 小时</b></div>
+        <div class="timeline"><span>08:00</span><div class="timelineTrack"><i id="timeProgress"></i></div><span id="dayLimit">22:00</span><b id="remaining">今日剩余 14 小时</b></div>
       </section>
 
       <aside class="sidePanel">
-        <section class="panel objective"><div class="panelTitle"><span>当前目标</span><em>主线</em></div><h2 id="objectiveTitle">完成晨间治疗</h2><p id="objectiveText">先观察院方规则，再决定要表现得顺从，还是冒险保持清醒。</p><div class="progress"><i id="objectiveProgress"></i></div><small id="objectiveStep">调查阶段 0 / 6</small></section>
+        <section class="panel objective"><div class="panelTitle"><span>当前阶段</span><em>信息</em></div><h2 id="objectiveTitle">完成晨间治疗</h2><p id="objectiveText">治疗结束后，场景热点与今天的行动才会开放。</p><div class="progress"><i id="objectiveProgress"></i></div><small id="objectiveStep">调查进度 0 / 23</small></section>
         <section class="panel meters"><div class="panelTitle"><span>院方评价</span></div><label><span>信任 <b id="trust">52</b></span><i><em id="trustBar"></em></i></label><label><span>怀疑 <b id="suspicion">8</b> / 60</span><i><em class="danger" id="suspicionBar"></em></i></label><label><span>药物负荷 <b id="drug">0</b></span><i><em class="drug" id="drugBar"></em></i></label></section>
-        <section class="panel relations"><div class="panelTitle"><span>今日人物</span><button id="relationBtn">查看全部</button></div><div id="people"><p><span class="avatar">林</span><b>护士林<small>关系 5</small></b><em>值班中</em></p></div></section>
+        <section class="panel relations"><div class="panelTitle"><span>当前场景人物</span><button id="relationBtn">查看全部</button></div><div id="people"></div></section>
+        <section class="panel quickActions"><button id="growthBtn">五维养成 / 技能树</button><button id="escapeBtn">离院方案</button></section>
         <button class="endDay" id="endDayBtn">结束今天</button>
       </aside>
     </section>
 
-    <footer class="feedback"><div class="feedbackTitle"><span>今天发生了什么</span><small>最旧 → 最新</small></div><div class="log" id="log"><article><time>08:00</time><p>你在东区 2 号病房醒来。床头柜上放着一只不属于你的腕带。</p></article></div></footer>
+    <footer class="feedback"><div class="feedbackTitle"><span>今天发生了什么</span><small>最旧 → 最新</small></div><div class="log" id="log"></div></footer>
   </main>
 
-  <div class="modal hidden" id="morningModal">
-    <div class="modalCard treatment"><div class="eyebrow">每日固定事件 · 08:00</div><h2>晨间治疗</h2><p>护士林把纸杯和药片放在你面前。你的选择会改变院方评价，也会影响今天的行动效率。</p><div class="choices">
-      <button data-treatment="full"><b>按医嘱服用</b><span>安全 · 信任上升 · 药物负荷增加</span></button>
-      <button data-treatment="half"><b>只服一半</b><span>中等风险 · 结果存在概率变化</span></button>
-      <button data-treatment="avoid" id="avoidTreatment"><b>设法避开</b><span>第 2 天解锁 · 高风险</span></button>
+  <div class="modal hidden" id="morningModal" role="dialog" aria-modal="true">
+    <div class="modalCard treatment"><div class="eyebrow">每日固定事件 · 08:00</div><h2>晨间治疗</h2><p>护士林把纸杯和药片放在你面前。不同处理方式会改变院方评价、药物负荷、清醒程度和今日行动数。</p><div class="choices">
+      <button data-treatment="full"><b>按医嘱服用</b><span>固定：信任上升、怀疑下降、药物负荷增加</span></button>
+      <button data-treatment="half"><b>只服一半</b><span>三种概率结果：蒙混、引起注意或被发现</span></button>
+      <button data-treatment="avoid" id="avoidTreatment"><b>设法避开</b><span>第 2 天解锁；可能触发双倍强制服药并损失 2 次行动</span></button>
     </div></div>
   </div>
 
-  <div class="modal hidden" id="actionModal"><div class="modalCard"><div class="eyebrow" id="actionEyebrow">场景行动</div><h2 id="actionTitle">行动标题</h2><p id="actionText"></p><div class="choices" id="actionChoices"></div><button class="closeWindow" id="closeAction">关闭窗口</button></div></div>
-  <div class="modal hidden" id="journalModal"><div class="modalCard wide"><div class="eyebrow">调查记录</div><h2>林默的随身记录</h2><div class="tabBar"><button class="active" data-journal="clues">线索</button><button data-journal="items">物品</button><button data-journal="relations">关系</button><button data-journal="rules">状态说明</button></div><div id="journalContent" class="journalContent"></div><button class="closeWindow" data-close="journalModal">关闭窗口</button></div></div>
-  <div class="modal hidden" id="shopModal"><div class="modalCard"><div class="eyebrow">院内生活 · 不消耗时间进入</div><h2>院内小卖部</h2><p id="shopRule">本次第一次成功购买会推进 1 小时；继续购买不再推进时间。</p><div class="shopGrid" id="shopGrid"></div><button class="closeWindow" data-close="shopModal">关闭窗口</button></div></div>
-  <div class="modal hidden" id="clueModal"><div class="modalCard clueCard"><div class="clueSeal">新线索</div><div class="eyebrow" id="clueType">调查线索</div><h2 id="clueTitle"></h2><p id="clueText"></p><div class="clueImpact" id="clueImpact"></div><button class="primary full" data-close="clueModal">确定</button></div></div>
-  <div class="modal hidden" id="dayEndModal"><div class="modalCard"><div class="eyebrow">每日结算</div><h2 id="dayEndTitle">第 1 天结束</h2><p id="dayEndText"></p><div class="summaryGrid" id="dayEndStats"></div><button class="primary full" id="nextDayBtn">进入下一天</button></div></div>
-  <div class="modal hidden" id="confinementModal"><div class="modalCard confinement"><div class="confinementArt"></div><div class="eyebrow">强制事件</div><h2>小黑屋</h2><p>怀疑达到 60。当前行动被立即中断，今天剩余时间全部取消，并执行强制服药。</p><button class="primary full" id="finishConfinementBtn">熬过隔离</button></div></div>
-  <div class="modal hidden" id="chapterModal"><div class="modalCard wide"><div class="eyebrow">Demo 章节完成</div><h2>你找到了制度的裂缝</h2><p>线索已经从零散异常连成一条可以验证的证据链。接下来可以走向三种不同的逃离准备。</p><div class="routeGrid"><article><b>A · 紧急复核</b><span>经营院方信任和护士关系，用正式记录离开。</span></article><article><b>B · 维修通道</b><span>依靠陈伯、工具与巡逻空档，从旧楼离开。</span></article><article id="routeC" class="locked"><b>C · 尚未发现</b><span>保安周凯掌握着一条不在公开排班上的路径。</span></article></div><button class="primary full" id="keepPlayingBtn">继续自由体验</button></div></div>
+  <div class="modal hidden" id="actionModal" role="dialog" aria-modal="true"><div class="modalCard"><div class="eyebrow" id="actionEyebrow">场景行动</div><h2 id="actionTitle">行动标题</h2><p id="actionText"></p><div class="choices" id="actionChoices"></div><button class="closeWindow" id="closeAction">关闭窗口</button></div></div>
+
+  <div class="modal hidden" id="journalModal" role="dialog" aria-modal="true"><div class="modalCard wide"><div class="eyebrow">随身记录</div><h2>林默的调查与养成记录</h2><div class="tabBar"><button class="active" data-journal="clues">线索</button><button data-journal="items">物品</button><button data-journal="relations">关系</button><button data-journal="growth">养成</button><button data-journal="rules">状态说明</button></div><div id="journalContent" class="journalContent"></div><button class="closeWindow" data-close="journalModal">关闭窗口</button></div></div>
+
+  <div class="modal hidden" id="shopModal" role="dialog" aria-modal="true"><div class="modalCard wide"><div class="eyebrow">院内生活 · 免费进入</div><h2>院内小卖部</h2><p id="shopRule">本次第一次成功购买会消耗 1 次行动并推进 1 小时；继续购买不再消耗行动或时间。</p><div class="shopGrid" id="shopGrid"></div><button class="closeWindow" data-close="shopModal">关闭窗口</button></div></div>
+
+  <div class="modal hidden" id="clueModal" role="dialog" aria-modal="true"><div class="modalCard clueCard"><div class="clueSeal">新线索</div><div class="eyebrow" id="clueType">调查线索</div><h2 id="clueTitle"></h2><p id="clueText"></p><div class="clueImpact" id="clueImpact"></div><button class="primary full" id="clueConfirm">确定</button></div></div>
+
+  <div class="modal hidden" id="dayEndModal" role="dialog" aria-modal="true"><div class="modalCard"><div class="eyebrow">每日结算</div><h2 id="dayEndTitle">第 1 天结束</h2><p id="dayEndText"></p><div class="summaryGrid" id="dayEndStats"></div><button class="primary full" id="nextDayBtn">进入下一天</button></div></div>
+
+  <div class="modal hidden" id="confinementModal" role="dialog" aria-modal="true"><div class="modalCard confinement"><div class="confinementArt"></div><div class="eyebrow">强制事件</div><h2>小黑屋</h2><p id="confinementText">怀疑达到 60。当前行动被立即中断，今天剩余时间与行动全部取消，并执行强制服药。</p><button class="primary full" id="finishConfinementBtn">熬过隔离</button></div></div>
+
+  <div class="modal hidden" id="escapeModal" role="dialog" aria-modal="true"><div class="modalCard wide"><div class="eyebrow">长期目标 · 不限天数</div><h2>离院方案</h2><p>只显示已经发现的方案。星期条件不满足时，可以继续准备并等待下一周。</p><div class="routeGrid" id="routeGrid"></div><button class="closeWindow" data-close="escapeModal">关闭窗口</button></div></div>
+
+  <div class="modal hidden" id="endingModal" role="dialog" aria-modal="true"><div class="modalCard wide endingCard"><div class="endingArt" id="endingArt"></div><div class="eyebrow">故事完成</div><h2 id="endingTitle"></h2><p id="endingText"></p><div class="summaryGrid" id="endingStats"></div><button class="primary full" id="restartBtn">重新开始</button></div></div>
+
   <div class="toast" id="toast"></div>
-  <script src="game.js?v=3.0.0"></script>
+  <script src="game.js?v=3.0-final-2"></script>
 </body>
 </html>
