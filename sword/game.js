@@ -61,7 +61,23 @@
   function draw(dt,time){ctx.clearRect(0,0,960,540);ctx.imageSmoothingEnabled=false;animation=Math.max(0,animation-dt);breakAnimation=Math.max(0,breakAnimation-dt);const frenzy=game.frenzy>0,hot=game.sword.heat>20;let color=frenzy?`hsl(${time*.18%360},85%,72%)`:hot?'#ffb063':'#aac2c2';
     // The sword is a native pixel sprite over the generated forge background.
     if(breakAnimation===0){const lift=game.heating>0?-25+Math.sin(time*.006)*3:0,impact=animation>.15?Math.sin(animation*30)*3:0;ctx.save();ctx.translate(480,330+lift+impact);if(hot||frenzy){ctx.shadowColor=frenzy?color:'#fa7838';ctx.shadowBlur=frenzy?28:18;}ctx.fillStyle='#293d40';ctx.fillRect(-102,-7,151,14);ctx.fillStyle=color;ctx.fillRect(-83,-7,124,11);ctx.fillRect(41,-4,12,6);ctx.fillRect(53,-1,10,3);ctx.shadowBlur=0;ctx.fillStyle=frenzy?'#e9c8ff':hot?'#ffe6a9':'#dfeddb';ctx.fillRect(-80,-7,120,3);ctx.fillStyle=frenzy?'#837de2':hot?'#dc6e37':'#658286';ctx.fillRect(-80,2,120,3);ctx.fillStyle='#69442c';ctx.fillRect(-118,-4,23,9);ctx.fillStyle='#d5a35a';ctx.fillRect(-99,-17,6,30);ctx.fillRect(-124,-8,8,16);ctx.fillStyle='#ffe2a2';ctx.fillRect(-98,-17,3,9);ctx.fillStyle='#b97f43';ctx.fillRect(-115,-4,3,9);ctx.fillRect(-107,-4,3,9);ctx.restore();}
-    if(animation>0){ctx.save();const swing=Math.sin((1-animation/.32)*Math.PI);ctx.translate(478,260+swing*50);ctx.rotate(-.9+swing*.8);ctx.fillStyle='#593c2c';ctx.fillRect(-4,-6,8,66);ctx.fillStyle='#a9794e';ctx.fillRect(-4,-6,3,66);ctx.fillStyle='#394442';ctx.fillRect(-26,-17,51,25);ctx.fillStyle='#aebdaf';ctx.fillRect(-26,-17,51,7);ctx.fillStyle='#6c7f78';ctx.fillRect(-26,-10,7,18);ctx.restore();}
+    if(animation>0){
+      ctx.save();
+      const swing=Math.sin((1-animation/.32)*Math.PI),angle=-.85*(1-swing);
+      const swordLift=game.heating>0?-25+Math.sin(time*.006)*3:0;
+      const swordImpact=animation>.15?Math.sin(animation*30)*3:0;
+      // The handle extends above the head. Only the steel striking face reaches the blade.
+      const headBottom=-26*Math.sin(angle)+8*Math.cos(angle);
+      ctx.translate(478-(1-swing)*45,323+swordLift+swordImpact-headBottom-(1-swing)*80);
+      ctx.rotate(angle);
+      ctx.fillStyle='#593c2c';ctx.fillRect(-4,-80,8,66);
+      ctx.fillStyle='#a9794e';ctx.fillRect(-4,-80,3,66);
+      ctx.fillStyle='#c38b57';ctx.fillRect(-4,-65,8,3);ctx.fillRect(-4,-56,8,3);
+      ctx.fillStyle='#394442';ctx.fillRect(-26,-17,51,25);
+      ctx.fillStyle='#aebdaf';ctx.fillRect(-26,-17,51,7);
+      ctx.fillStyle='#6c7f78';ctx.fillRect(-26,-10,7,18);
+      ctx.restore();
+    }
     if(game.heating>0){ctx.fillStyle='#eaca8b';ctx.font='11px monospace';ctx.textAlign='center';ctx.fillText('HEATING...',480,282);}
     particles=particles.filter(p=>p.life>0);for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=440*dt;ctx.globalAlpha=Math.min(1,p.life*3);ctx.fillStyle=p.color;ctx.fillRect(Math.round(p.x/3)*3,Math.round(p.y/3)*3,4,4);}ctx.globalAlpha=1;
     if(frenzy){for(let i=0;i<12;i++){const x=480+Math.sin(time*.002+i)*135,y=308+Math.cos(time*.003+i*2)*37;ctx.fillStyle=`hsla(${(time*.15+i*30)%360},85%,75%,.7)`;ctx.fillRect(Math.round(x/4)*4,Math.round(y/4)*4,4,4);}}
