@@ -1,0 +1,29 @@
+/* Endless progression and upgrade controls, shared with the portrait layout. */
+.stage-note{display:block;font-size:10px;line-height:1.6;color:#9fa98b;margin-top:5px}
+.boss-round{border-left-color:#e17a5d;background:linear-gradient(110deg,#33241c,#20231a)}
+.boss-round .stage-note{color:#e9a184}
+.resonance-status{display:block;font:12px Georgia,"Microsoft YaHei",sans-serif;color:#ddc193;margin-top:8px}
+.relic-badge{position:relative;min-width:38px;min-height:42px;padding:5px 5px 13px}
+.relic-badge small{position:absolute;bottom:3px;left:0;right:0;text-align:center;font:8px monospace;color:#e1c591;pointer-events:none}
+.inventory-actions{display:flex;align-items:stretch;gap:8px;flex-shrink:0}
+.take-button{min-height:44px;padding:9px 14px;font-size:12px;background:#292f25;color:#c4d0ac;border-color:#5a644a}
+.shop-highlight{color:#e1bd7f}
+.growth-note{padding:9px 12px;background:#303020;border:1px solid #58523a;color:#c3b98b!important;font-size:11px!important;line-height:1.7!important}
+.shop-card h3 small{display:block;margin-top:6px;color:#adb898;font-size:10px;font-weight:normal;letter-spacing:.5px}
+.shop-card p.upgrade-effect{min-height:95px;color:#aab795}
+.upgrade-effect b{font-weight:normal;color:#ddc99c}
+.shop-card .price{overflow-wrap:anywhere}
+@media(max-width:800px){.inventory-actions .tribute-button{flex-direction:column;gap:5px}.inventory-actions{align-items:stretch}.take-button{font-size:11px;padding:9px 10px}}
+@media(max-width:600px){
+  .stage-note{font-size:8px;line-height:1.5;margin-top:3px;white-space:normal}
+  .inventory-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:8px}
+  .inventory-actions .tribute-button{flex-direction:column;justify-content:center;gap:4px;font-size:12px;min-height:52px;padding:8px 6px}
+  .inventory-actions .tribute-button span{font-size:11px;overflow-wrap:anywhere;white-space:normal;text-align:center}
+  .take-button{font-size:13px;min-height:52px}
+  .resonance-status{display:inline-block;font-size:11px;margin:0 0 0 11px}
+  .relic-badge{min-width:46px;min-height:51px;padding:7px 7px 15px}.relic-badge small{font-size:9px}
+  .shop-card h3 small{font-size:10px;letter-spacing:0;margin-top:4px}
+  .shop-card p.upgrade-effect{min-height:0;font-size:11px}
+  .shop-card .price{max-width:115px;font-size:clamp(16px,5.4vw,22px);line-height:1.3}
+  .growth-note{font-size:10px!important;padding:9px 11px}
+}
