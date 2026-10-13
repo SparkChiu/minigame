@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f3eddf"><title>嘿嘿大饭店 · 怪客吃不停</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<header><div><small>WICKED FEAST · 拓展关卡</small><h1>怪客吃不停<span>嘿嘿大饭店</span></h1></div><button id="help" aria-label="玩法说明">?</button></header>
+<nav><select id="level" aria-label="选择关卡"></select><button id="restart">重来</button><button id="pause">暂停</button></nav>
+<p id="stage-tip" class="stage-tip"></p>
+<section class="meter"><div><span>料理剩余</span><b id="left"></b></div><progress id="progress" max="100" value="0" aria-label="料理清空进度"></progress><div class="combo">Combo <strong id="combo">0</strong><b id="speed">×1</b></div></section>
+<canvas id="scene" width="780" height="1000" aria-label="料理货架与五个餐位；入座的怪客自动进食，三同类合并腾位"></canvas>
+<div id="exposed-row"><span>底层口味</span><div id="exposed"></div></div>
+<div class="queue-label"><h2>门口候客</h2><span>餐位 <b id="seat-count">0/5</b> · 只选每列最前一位</span></div>
+<div id="queues"></div><p id="hint" role="status" aria-live="polite"></p>
+<footer><label><input id="hint-toggle" type="checkbox" checked>底层提示</label><button id="sound">音效：关</button><span>电脑按 1 / 2 / 3 入座</span></footer>
+<details><summary>今晚的小故事</summary><p id="story"></p></details>
+</main>
+<dialog id="help-dialog"><span class="tag">河狸的开席指南</span><h2>看底层，再请客</h2><ol><li>上方料理会向下补位。怪客只吃底部露出的同口味料理。</li><li>点击三列候客中最前面的客人，安排到五个餐位之一。后面的客人不能越队。</li><li>客人自动进食，数字是剩余食量，吃到零就离席。</li><li>三位同色客人自动合成一位大胃王，剩余食量相加，腾出两个位置；不会直接离席。</li><li>连续进食与合并积累 Combo，带来进食加速。第五关的数字大餐需要多口才能整块清掉。</li><li>吃空货架即可过关。餐位全满且谁也吃不到底层，会卡局，需要重试。</li></ol><p class="fine">无倒计时。卡局判定、Combo 数值和关卡排列是本原型设定。支持手机触屏和电脑点击。</p><button id="close-help" class="primary">开席吧</button></dialog>
+<dialog id="result"><span class="tag">今晚营业结算</span><h2 id="result-title"></h2><p id="result-copy"></p><p id="result-stats"></p><div class="actions"><button id="replay">再玩一次</button><button id="next" class="primary">下一桌</button></div></dialog>
+<script src="levels.js"></script><script src="game.js"></script>
+</body></html>
