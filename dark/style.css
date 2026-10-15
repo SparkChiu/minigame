@@ -8,3 +8,5 @@
 
 .recipe-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:9px;padding:7px 8px;background:#eef1e4;border-radius:4px;font-size:10px;color:#66775d}.recipe-stats span{white-space:nowrap}.recipe-stats b{font-family:Consolas,monospace;color:#355b45;margin-left:3px}
 
+
+.map-head{gap:12px;flex-wrap:wrap}.wave-status{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.wave-status .live-dot{margin-right:0}.wave-status .wave-timer{margin-left:4px}
