@@ -36,7 +36,7 @@ test('escape is not a kill and wall vision stays blocked',()=>{
 });
 test('24 seeded full AI simulations keep every actor on open cardinal corridors',()=>{
  for(let trial=0;trial<24;trial++){
- seed=trial+17;run('state=initial();state.hp=state.maxHp=1e9;state.active=true;state.wave=3;state.spawnLeft=0;for(var j=0;j<6;j++)spawnHero();state.stock[0]=4;select("monster0");[[4,3],[7,5],[11,8],[17,13]].forEach(([x,y])=>clickTile(x,y));state.heroes.forEach(h=>h.hp=h.maxHp=1e8);state.monsters.forEach((m,i)=>{m.hp=m.maxHp=1e8;m.level=i%2?5:1;});for(var i=0;i<3000;i++){update(.05);for(const a of [...state.heroes,...state.monsters]){if(!Number.isFinite(a.x)||!Number.isFinite(a.y)||!state.grid[Math.round(a.y)]?.[Math.round(a.x)]?.open)throw Error("actor entered wall");if(Math.abs(a.x-Math.round(a.x))>1e-7&&Math.abs(a.y-Math.round(a.y))>1e-7)throw Error("actor off cardinal axis");}}draw();renderUI();');
+ seed=trial+17;run('state=initial();state.hp=state.maxHp=1e9;state.active=true;state.countdownActive=false;state.wave=3;state.spawnLeft=0;for(var j=0;j<6;j++)spawnHero();state.stock[0]=4;select("monster0");[[4,3],[7,5],[11,8],[17,13]].forEach(([x,y])=>clickTile(x,y));state.heroes.forEach(h=>h.hp=h.maxHp=1e8);state.monsters.forEach((m,i)=>{m.hp=m.maxHp=1e8;m.level=i%2?5:1;});for(var i=0;i<3000;i++){update(.05);for(const a of [...state.heroes,...state.monsters]){if(!Number.isFinite(a.x)||!Number.isFinite(a.y)||!state.grid[Math.round(a.y)]?.[Math.round(a.x)]?.open)throw Error("actor entered wall");if(Math.abs(a.x-Math.round(a.x))>1e-7&&Math.abs(a.y-Math.round(a.y))>1e-7)throw Error("actor off cardinal axis");}}draw();renderUI();');
  }
 });
 console.log('All v10 checks passed.');
