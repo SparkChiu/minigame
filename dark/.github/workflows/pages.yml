@@ -22,7 +22,7 @@ jobs:
       - name: Prepare static files
         run: |
           mkdir -p public
-          cp index.html style.css engine.js render.js movement.js combat-ai.js .nojekyll public/
+          cp index.html style.css engine.js render.js movement.js combat-ai.js GAME_RULES.md SOURCES.md README.md DESIGN.md VALIDATION.md RULES-v20.md .nojekyll public/
           cp -r assets public/
       - uses: actions/upload-pages-artifact@v3
         with:
