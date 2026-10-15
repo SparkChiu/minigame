@@ -2,7 +2,7 @@
 
 | 来源 | 用途 | 权威性 |
 | --- | --- | --- |
-| [GAME_RULES.md](GAME_RULES.md) | 当前全部有效游戏规则，现为v23 | 游戏规则权威文件；用户最新要求优先 |
+| [GAME_RULES.md](GAME_RULES.md) | 当前全部有效游戏规则，现为v25 | 游戏规则权威文件；用户最新要求优先 |
 | [engine.js](engine.js) | 经营、资源、波次、建筑、烹饪与队列实现 | 用于核对实际行为 |
 | [combat-ai.js](combat-ai.js) | 视野、追击、概率逃跑、休整重返 | 用于核对实际行为 |
 | [movement.js](movement.js) | 逐格移动及通行处理 | 用于核对实际行为 |
