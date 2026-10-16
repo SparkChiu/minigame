@@ -1,6 +1,6 @@
 // Vision, local target memory, pursuit and retreat. Movement helpers load first.
 function clearShot(x,y,tx,ty){const steps=Math.max(1,Math.ceil(Math.hypot(tx-x,ty-y)*16));let prevX=Math.round(x),prevY=Math.round(y);for(let i=0;i<=steps;i++){const a=Math.round(x+(tx-x)*i/steps),b=Math.round(y+(ty-y)*i/steps);if(!state.grid[b]?.[a]?.open)return false;if(a!==prevX&&b!==prevY&&(!state.grid[prevY]?.[a]?.open||!state.grid[b]?.[prevX]?.open))return false;prevX=a;prevY=b;}return true;}
-function visionRange(a){return (a.profession||a.gear?heroStats(a).range:recipes[a.kind??0].range)+2;}
+function visionRange(a){return (a.profession?heroStats(a).range:recipes[a.kind??0].range)+2;}
 function inVisionGrid(a,x,y){return Math.hypot(x-a.x,y-a.y)<=visionRange(a)+1e-7;}
 function canSee(a,b){return b.hp>0&&inVisionGrid(a,b.x,b.y)&&clearShot(a.x,a.y,b.x,b.y);}
 function withinMonsterTether(m,x,y){return Math.hypot(x-(m.homeX??m.x),y-(m.homeY??m.y))<=3+1e-7;}
@@ -19,8 +19,28 @@ let m=state.monsters.find(m=>m.id===h.combatTargetId&&m.hp>0);if(m&&canSee(h,m))
 if(!m)return false;const stats=heroStats(h),distance=Math.hypot(m.x-h.x,m.y-h.y);if(distance<=stats.range&&canSee(h,m))heroAttack(h,m.id);if(distance>Math.max(.75,stats.range*.65))moveCombat(h,m.x,m.y,stats.speed*dtMultiplier(h),dt);return true;}
 function dtMultiplier(h){return h.slow>0?.45:1;}
 function stopMonsterPursuit(m){m.combatTargetId=null;m.lastSeenHero=null;m.combatMemoryUntil=0;if(!m.leashReturning){clearNavigation(m);m.leashReturning=true;}}
+// Ranged monsters seek the farthest reachable firing tile, keeping a clear shot while retreating.
+function rangedMonsterPosition(m,h,dt){
+ const range=recipes[m.kind].range,shoots=(x,y)=>Math.hypot(x-h.x,y-h.y)<=range+1e-7&&clearShot(x,y,h.x,h.y);
+ // Finish the current cardinal segment before choosing a different axis.
+ if(m.navStep&&Math.hypot(m.x-Math.round(m.x),m.y-Math.round(m.y))>1e-7){safeAdvance(m,m.navStep,.75,dt,true);return;}
+ clearNavigation(m);
+ const start=[Math.round(m.x),Math.round(m.y)],q=[start],seen=new Set([start.join(',')]),prev={},keepShot=shoots(m.x,m.y);
+ let best=keepShot?start:null,bestDistance=keepShot?Math.hypot(m.x-h.x,m.y-h.y):-1;
+ for(let i=0;i<q.length;i++){
+  const cell=q[i],[x,y]=cell,d=Math.hypot(x-h.x,y-h.y);
+  if(shoots(x,y)&&d>bestDistance+.01){best=cell;bestDistance=d;}
+  for(const next of neighbors(x,y)){
+   const key=next.join(',');if(seen.has(key)||!openTile(...next,true)||!withinMonsterTether(m,...next))continue;
+   if(keepShot){let safe=true;for(let j=0;j<=8;j++)if(!shoots(x+(next[0]-x)*j/8,y+(next[1]-y)*j/8)){safe=false;break;}if(!safe)continue;}
+   seen.add(key);prev[key]=cell;q.push(next);
+  }
+ }
+ if(best){const path=[];for(let cell=best;prev[cell.join(',')];cell=prev[cell.join(',')])path.unshift(cell);if(path.length)safeAdvance(m,path[0],.75,dt,true);}
+ else if(!keepShot)moveCombat(m,h.x,h.y,.75,dt,true);
+}
 function monsterCombat(m,dt){m.homeX??=Math.round(m.x);m.homeY??=Math.round(m.y);if(!withinMonsterTether(m,m.x,m.y))stopMonsterPursuit(m);const current=state.heroes.find(h=>h.id===m.combatTargetId&&h.hp>0&&!h.escaped);if(current&&canSee(m,current)&&!withinMonsterTether(m,current.x,current.y))stopMonsterPursuit(m);if(m.leashReturning){if(Math.hypot(m.x-m.homeX,m.y-m.homeY)>.05)moveCombat(m,m.homeX,m.homeY,.65,dt,true);else m.leashReturning=false;if(m.leashReturning)return true;}let h=state.heroes.find(h=>h.id===m.combatTargetId&&h.hp>0&&!h.escaped);if(h&&canSee(m,h)){m.lastSeenHero={x:h.x,y:h.y};m.combatMemoryUntil=state.time+4;}else{const found=state.heroes.filter(h=>!h.escaped&&canSee(m,h)&&withinMonsterTether(m,h.x,h.y)).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(found){h=found;m.combatTargetId=h.id;m.lastSeenHero={x:h.x,y:h.y};m.combatMemoryUntil=state.time+4;}else if(m.combatTargetId){const point=m.lastSeenHero;if(!h||state.time>(m.combatMemoryUntil||0)||point&&Math.hypot(m.x-point.x,m.y-point.y)<.2){m.combatTargetId=null;m.lastSeenHero=null;}else{if(moveCombat(m,point.x,point.y,.75,dt,true))return true;m.combatTargetId=null;m.lastSeenHero=null;return false;}}}
-if(!h||!m.combatTargetId){m.combatStep=null;if(Math.abs(m.x-(m.homeX??m.x))+Math.abs(m.y-(m.homeY??m.y))>2){moveCombat(m,m.homeX,m.homeY,.65,dt,true);return true;}return false;}m.patrolTarget=null;if(canSee(m,h)&&Math.hypot(h.x-m.x,h.y-m.y)>Math.max(.7,recipes[m.kind].range*.65)){if(!moveCombat(m,h.x,h.y,.75,dt,true)&&Math.hypot(h.x-m.x,h.y-m.y)>recipes[m.kind].range)return false;}return true;}
+if(!h||!m.combatTargetId){m.combatStep=null;if(Math.abs(m.x-(m.homeX??m.x))+Math.abs(m.y-(m.homeY??m.y))>2){moveCombat(m,m.homeX,m.homeY,.65,dt,true);return true;}return false;}m.patrolTarget=null;if(recipes[m.kind].tag.includes("远程")&&canSee(m,h)){rangedMonsterPosition(m,h,dt);return true;}if(canSee(m,h)&&Math.hypot(h.x-m.x,h.y-m.y)>Math.max(.7,recipes[m.kind].range*.65)){if(!moveCombat(m,h.x,h.y,.75,dt,true)&&Math.hypot(h.x-m.x,h.y-m.y)>recipes[m.kind].range)return false;}return true;}
 function updateEscapeDepartures(){state.returningHeroes??=[];state.heroes=state.heroes.filter(h=>{if(!h.escaped||h.hp<=0)return true;state.escaped=(state.escaped||0)+1;state.returningHeroes.push({hero:h,returnAt:state.time+5});log(heroClass(h).name+'撤离休整，5 秒后升级重返迷宫。');return false;});}
 function updateReturningHeroes(){state.returningHeroes??=[];state.returningHeroes=state.returningHeroes.filter(entry=>{if(state.time+1e-7<entry.returnAt||!heroEntranceClear())return true;const h=entry.hero;h.torchAvailable=true;h.torchCheckAt=state.time+8+Math.random()*6;h.level++;h.maxHp+=24;h.hp=h.maxHp;h.x=2;h.y=0;h.lastSafeCell=[2,0];clearNavigation(h);h.fleeing=false;h.combatUntil=0;h.yieldUntil=0;h.yieldTarget=null;h.yieldCooldownUntil=0;h.moveIntent=null;h.blockedFor=0;h.fearChecks={};h.escaped=false;h.combatTargetId=null;h.lastSeenMonster=null;h.combatMemoryUntil=0;h.threatMemory=null;h.previousTile=null;h.visits={'2,0':1};h.exploreMap={};h.exploreRecent=[];h.exploreReturning=false;h.exploreGoal=null;h.burn=0;h.burnOwner=null;h.slow=0;h.killerId=null;h.digTarget=null;h.digLeft=0;h.digCD=5;h.trapAttempts=[];h.cd=.5;h.healCD=Math.max(0,(h.healCD||0)-5);state.heroes.push(h);fx(2,0,'重返！Lv.'+h.level,'#e6ba75');log((h.boss?'BOSS厨师 · ':'')+heroClass(h).name+'休整升级至 Lv.'+h.level+'，重返迷宫！');return false;});}
 

@@ -15,16 +15,37 @@ function heroSegmentBlocked(a,x,y){const dx=x-a.x,dy=y-a.y,length=dx*dx+dy*dy;re
 function settleHeroStep(a,requested){return [requested,[Math.round(a.x),Math.round(a.y)],[Math.floor(a.x),Math.floor(a.y)],[Math.ceil(a.x),Math.ceil(a.y)]].find(p=>legalSegment(a,p)&&!heroSegmentBlocked(a,...p));}
 function isEntranceLane(x,y){return x===2&&y>=0&&y<=3;}
 function chefPriority(h){return (h.fleeing?-1000000:h.exploreReturning?-500000:0)+(h.id||0);}
-function findHeroParking(h,blocker){const sx=Math.round(h.x),sy=Math.round(h.y),horizontal=Math.abs(blocker.x-h.x)>=Math.abs(blocker.y-h.y),q=[[sx,sy]],seen=new Set([sx+','+sy]);for(let i=0;i<q.length;i++){const [x,y]=q[i];if(!isEntranceLane(x,y)&&(horizontal?Math.abs(y-h.y):Math.abs(x-h.x))>=.9&&!heroTileOccupied(h,x,y))return {x,y};for(const [a,b]of neighbors(x,y)){const key=a+','+b;if(seen.has(key)||!openTile(a,b)||heroTileOccupied(h,a,b))continue;seen.add(key);q.push([a,b]);}}return null;}
-function planHeroYield(h,blocker){if(state.time<(h.yieldCooldownUntil||0))return false;if(state.time<(h.yieldUntil||0)&&h.yieldTarget)return true;const point=findHeroParking(h,blocker);if(!point)return false;const horizontal=Math.abs(blocker.x-h.x)>=Math.abs(blocker.y-h.y);h.yieldTarget=point;h.yieldUntil=state.time+Math.hypot(point.x-h.x,point.y-h.y)/Math.max(.1,heroStats(h).speed)+6;h.yieldBlockerId=blocker.id;h.yieldStarted=state.time;h.yieldLastProgress=state.time;h.yieldParkedAt=null;h.yieldOrigin={x:h.x,y:h.y,horizontal,sign:Math.sign(horizontal?blocker.x-h.x:blocker.y-h.y)||1};h.blockedFor=0;clearNavigation(h);return true;}
-function cancelHeroYield(h){h.yieldTarget=null;h.yieldUntil=0;h.yieldCooldownUntil=state.time+1;h.yieldParkedAt=null;clearNavigation(h);}
+function findHeroParking(h,blocker,cooperative=false){
+ const sx=Math.round(h.x),sy=Math.round(h.y),horizontal=Math.abs(blocker.x-h.x)>=Math.abs(blocker.y-h.y),q=[[sx,sy]],seen=new Set([sx+','+sy]);
+ const reserved=(x,y)=>state.heroes.some(o=>o!==h&&o.hp>0&&o.yieldTarget&&state.time<o.yieldUntil&&o.yieldTarget.x===x&&o.yieldTarget.y===y);
+ for(let i=0;i<q.length;i++){const [x,y]=q[i];if(!isEntranceLane(x,y)&&(horizontal?Math.abs(y-h.y):Math.abs(x-h.x))>=.9&&!heroTileOccupied(h,x,y)&&!reserved(x,y))return {x,y};
+  for(const [a,b]of neighbors(x,y)){const key=a+','+b;if(seen.has(key)||!openTile(a,b)||Math.hypot(a-blocker.x,b-blocker.y)<.65||!cooperative&&heroTileOccupied(h,a,b))continue;seen.add(key);q.push([a,b]);}
+ }return null;
+}
+function planHeroYield(h,blocker,cooperative=false){
+ if(h===blocker||state.time<(h.yieldCooldownUntil||0))return false;
+ if(state.time<(h.yieldUntil||0)&&h.yieldTarget)return h.yieldBlockerId===blocker.id;
+ let point=findHeroParking(h,blocker);if(!point){point=findHeroParking(h,blocker,true);cooperative=true;}if(!point)return false;
+ const horizontal=Math.abs(blocker.x-h.x)>=Math.abs(blocker.y-h.y);h.yieldTarget=point;h.yieldCooperative=cooperative;h.yieldUntil=state.time+Math.hypot(point.x-h.x,point.y-h.y)/Math.max(.1,heroStats(h).speed)+(cooperative?30:6);h.yieldBlockerId=blocker.id;h.yieldStarted=state.time;h.yieldLastProgress=state.time;h.yieldParkedAt=null;h.yieldOrigin={x:h.x,y:h.y,horizontal,sign:Math.sign(horizontal?blocker.x-h.x:blocker.y-h.y)||1};h.blockedFor=0;clearNavigation(h);return true;
+}
+// During a coordinated withdrawal, plan through the queue and ask the next chef to back up too.
+function heroYieldStep(h,priority){
+ const start=[Math.round(h.x),Math.round(h.y)],q=[start],seen=new Set([start.join(',')]),prev={};
+ for(let i=0;i<q.length;i++){const cell=q[i],[x,y]=cell;if(x===h.yieldTarget.x&&y===h.yieldTarget.y){const path=[];for(let p=cell;prev[p.join(',')];p=prev[p.join(',')])path.unshift(p);return path[0];}
+  for(const p of neighbors(x,y)){const key=p.join(',');if(seen.has(key)||!openTile(...p)||priority&&Math.hypot(p[0]-priority.x,p[1]-priority.y)<.65)continue;seen.add(key);prev[key]=cell;q.push(p);}
+ }return null;
+}
+function cancelHeroYield(h){h.yieldTarget=null;h.yieldCooperative=false;h.yieldUntil=0;h.yieldCooldownUntil=state.time+1;h.yieldParkedAt=null;clearNavigation(h);}
 function advanceHero(h,requested,speed,dt){
  if(h.yieldTarget&&state.time<(h.yieldUntil||0)){
   const other=state.heroes.find(o=>o.id===h.yieldBlockerId&&o.hp>0&&!o.escaped),origin=h.yieldOrigin,passed=other&&origin&&((origin.horizontal?other.x-origin.x:other.y-origin.y)*origin.sign<-.65),parked=Math.hypot(h.x-h.yieldTarget.x,h.y-h.yieldTarget.y)<.08;
   if(parked&&h.yieldParkedAt==null)h.yieldParkedAt=state.time;
-  const stale=!parked&&state.time-(h.yieldLastProgress??h.yieldStarted??state.time)>=1.25,held=parked&&state.time-(h.yieldParkedAt??state.time)>=1.5;
+  const stale=!parked&&state.time-(h.yieldLastProgress??h.yieldStarted??state.time)>=(h.yieldCooperative?8:1.25),held=!h.yieldCooperative&&parked&&state.time-(h.yieldParkedAt??state.time)>=1.5;
   if(!other||passed||stale||held){cancelHeroYield(h);return false;}
-  const step=heroRoute(h,h.yieldTarget.x,h.yieldTarget.y)[0],x=h.x,y=h.y,moved=safeAdvance(h,step,speed,dt);
+  if(parked)return false;
+  const step=h.yieldCooperative?heroYieldStep(h,other):heroRoute(h,h.yieldTarget.x,h.yieldTarget.y)[0];
+  if(step&&h.yieldCooperative){const follower=state.heroes.find(o=>o!==h&&o!==other&&o.hp>0&&!o.escaped&&Math.hypot(o.x-step[0],o.y-step[1])<.8);if(follower&&chefPriority(other)<chefPriority(follower)&&planHeroYield(follower,other,true))h.yieldLastProgress=state.time;}
+  const x=h.x,y=h.y,moved=safeAdvance(h,step,speed,dt);
   if(Math.hypot(h.x-x,h.y-y)>1e-6)h.yieldLastProgress=state.time;
   return moved;
  }
