@@ -10,3 +10,5 @@
 
 
 .map-head{gap:12px;flex-wrap:wrap}.wave-status{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.wave-status .live-dot{margin-right:0}.wave-status .wave-timer{margin-left:4px}
+
+.quick-start-steps{padding-left:24px;line-height:1.9}.quick-start-steps li{padding:3px 0}.quick-start-goal{font-weight:bold;color:#355b45}#confirmQuickStart{width:100%;margin-top:8px}

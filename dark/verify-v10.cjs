@@ -3,7 +3,7 @@ const noop=()=>{},els=new Map(),draw=new Proxy({},{get:()=>noop,set:()=>true});
 function el(id){if(!els.has(id))els.set(id,{innerHTML:'',textContent:'',style:{},dataset:{},classList:{toggle:noop},addEventListener:noop,getContext:()=>draw,showModal(){this.open=true;},close(){this.open=false;}});return els.get(id);}
 let seed=731;const math=Object.create(Math);math.random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const store={};
 const c=vm.createContext({console,Math:math,JSON,Number,String,Array,Set,Map,Error,Infinity,document:{getElementById:el,querySelectorAll:()=>[],addEventListener:noop},window:{},localStorage:{setItem:(k,v)=>store[k]=v,getItem:k=>store[k]},requestAnimationFrame:noop,setTimeout:noop,clearTimeout:noop});
-for(const file of ['render.js','movement.js','combat-ai.js','engine.js'])vm.runInContext(fs.readFileSync(file,'utf8'),c);
+for(const file of ['render.js','movement.js','combat-ai.js','engine.js'])vm.runInContext(fs.readFileSync(file,'utf8'),c);vm.runInContext('confirmQuickStart()',c);
 const run=s=>vm.runInContext(s,c),test=(name,fn)=>{fn();console.log('PASS '+name);};
 function setup(){run('state=initial();state.wave=1;spawnHero();var h=state.heroes[0];h.x=4;h.y=3;clearNavigation(h);');}
 test('mid-step exploration / pursuit / retreat switches stay cardinal and make progress',()=>{
